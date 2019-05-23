@@ -321,3 +321,31 @@ foreach ($esxi in $esxihosts){
     Get-AdvancedSetting -Entity $esxi -Name UserVars.SuppressHyperthreadWarning | Set-AdvancedSetting -Value 1 -Confirm:$false
 }
 
+#Create CAMCUBE Folders
+New-Folder "Applicaties" -Location VM
+New-Folder "CAMCUBE-PRODUCTIE" -Location VM
+New-Folder "DO_NOT_BACKUP" -Location VM
+
+#Rename vsanDatastore
+Get-Datastore vsanDatastore | Set-Datastore -Name "Resource-vsanDatastore"
+
+#Set Coredump on all hosts
+$esxihosts = get-cluster $p.cluster |get-vmhost
+foreach ($esxi in $esxihosts){
+    $esxcli = Get-EsxCli -VMHost $esxi
+    $esxcli.system.coredump.network.set($null,"vmk0",$null,$p.vcenteripadress,6500)
+    $esxcli.system.coredump.network.set($true)
+    $esxcli.system.coredump.network.get()
+}
+
+#Create ProductLocker Location on vsanDatastore
+#$datastore = (Get-Datastore)
+#New-PSDrive -Location $datastore -Name DS -PSProvider VimDatastore -Root "\"
+#New-Item -Path DS: -ItemType Directory -Name SharedProductLocker
+#New-Item -ItemType Directory -Name vmtools -Path \SharedProductLocker\
+#New-Item -ItemType Directory -Name floppies -Path \SharedProductLocker\
+#Create vSAN Storage Policies
+
+#Add Permission for AD group after AD Join and Adding Identity Source
+New-VIPermission -Entity (Get-Folder -NoRecursion) -Principal $p.adminadgroup -Role (Get-VIRole -Name Admin)
+
