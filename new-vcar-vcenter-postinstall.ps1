@@ -350,3 +350,5 @@ foreach ($esxi in $esxihosts){
 New-VIPermission -Entity (Get-Folder -NoRecursion) -Principal $p.adminadgroup -Role (Get-VIRole -Name Admin)
 
 #dit wordt een nieuwe regel ofzo
+#Dit ook! Cool he. 
+
