@@ -348,5 +348,3 @@ foreach ($esxi in $esxihosts){
 
 #Add Permission for AD group after AD Join and Adding Identity Source
 New-VIPermission -Entity (Get-Folder -NoRecursion) -Principal $p.adminadgroup -Role (Get-VIRole -Name Admin)
-
-#dit wordt een nieuwe regel ofzo
