@@ -1,0 +1,11 @@
+ESXI_Host,IP
+dc1-esxi-2-01.infra.local,10.0.216.1
+dc1-esxi-2-02.infra.local,10.0.216.2
+dc1-esxi-2-03.infra.local,10.0.216.3
+dc1-esxi-2-04.infra.local,10.0.216.4
+dc1-esxi-2-05.infra.local,10.0.216.5
+dc2-esxi-2-01.infra.local,10.0.216.6
+dc2-esxi-2-02.infra.local,10.0.216.7
+dc2-esxi-2-03.infra.local,10.0.216.8
+dc2-esxi-2-04.infra.local,10.0.216.9
+dc2-esxi-2-05.infra.local,10.0.216.10
