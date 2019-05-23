@@ -1,7 +1,7 @@
 ﻿####
 #
 # SCript om StorCLI te installeren op alle hosts binnen 1 cluster
-#
+# hoi
 #
 # Randvoorwaarden:
 # HFS op Allow in windows Firewall
