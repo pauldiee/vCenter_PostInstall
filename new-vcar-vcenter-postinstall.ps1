@@ -345,8 +345,9 @@ foreach ($esxi in $esxihosts){
 #New-Item -ItemType Directory -Name vmtools -Path \SharedProductLocker\
 #New-Item -ItemType Directory -Name floppies -Path \SharedProductLocker\
 
-#Create vSAN Storage Policies
-New-SpbmStoragePolicy -Name "CC|Resources - DC Failover RAID1"
+#Create vSAN Storage Policies (nog uitwerken)
+Get-SpbmStoragePolicy
 
 #Add Permission for AD group after AD Join and Adding Identity Source
 New-VIPermission -Entity (Get-Folder -NoRecursion) -Principal $p.adminadgroup -Role (Get-VIRole -Name Admin)
+
