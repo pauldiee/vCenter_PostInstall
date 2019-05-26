@@ -338,7 +338,7 @@ foreach ($esxi in $esxihosts){
     $esxcli.system.coredump.network.get()
 }
 
-#Create ProductLocker Location on vsanDatastore
+#Create ProductLocker Location on vsanDatastore (nog uitwerken)
 #$datastore = (Get-Datastore)
 #New-PSDrive -Location $datastore -Name DS -PSProvider VimDatastore -Root "\"
 #New-Item -Path DS: -ItemType Directory -Name SharedProductLocker
