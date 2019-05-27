@@ -18,7 +18,10 @@ New-Cluster $p.cluster -Location $p.datacenter
 [void](Read-Host 'Press Enter to continue')
 
 #Create DVSwitch and Portgroups
-New-VDSwitch -Location $p.datacenter -Name $p.dvs -NumUplinkPorts 2 -Mtu 9000
+$cluster = "$p.cluster"
+if ((Get-VDSwitch |Where-Object {$_.Name -ne "$p.dvs"})) {
+    New-VDSwitch -Location $p.datacenter -Name $p.dvs -NumUplinkPorts 2 -Mtu 9000
+}#if condition
 New-VDPortgroup -Name $p.resourcemgmtportgroup -VlanId $p.rscmgmtvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
 New-VDPortgroup -Name $p.vmotionportgroup -VlanId $p.vmotionvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
 New-VDPortgroup -Name $p.provisioningportgroup -VlanId $p.provisioningvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
@@ -27,7 +30,7 @@ New-VDPortgroup -Name $p.vsanportgroup -VlanId $p.vsanvlan -PortBinding static -
 #HARDE STOP!
 [void](Read-Host 'Press Enter to continue')
 
-#Add Hosts to vCenter (Cluster and Datacenter)
+#Add 10 Hosts to vCenter 5 per MER(Cluster and Datacenter)
 1..5 | Foreach-Object { 
     Add-VMHost dc1-esxi-2-0$_.infra.local -Location  (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
 }
