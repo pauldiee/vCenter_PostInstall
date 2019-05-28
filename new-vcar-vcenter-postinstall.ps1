@@ -1,3 +1,16 @@
+<#
+Created by : "Paul van Dieën"
+Created on : "28-5-2019"
+Latest Change :"28-5-2019"
+
+prerequisites :
+POSH-SSH Module installed
+Powershell Framework 5.1
+PowerCLI 11.2
+
+This script Adds 5 hosts per MER for a total of 10 hosts, change the number of hosts within this script.
+#>
+
 $WorkingDir = split-path -parent $PSCommandPath
 Set-Location -Path $WorkingDir
 $p = Import-PowerShellDataFile -Path ".\parameters.psd1"
@@ -76,11 +89,15 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
 [void](Read-Host 'Press Enter to continue')
 
 #Add 10 Hosts to vCenter 5 per MER(Cluster and Datacenter)
-1..5 | Foreach-Object { 
-    Add-VMHost dc1-esxi-2-0$_.infra.local -Location  (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
-}
-1..5 | Foreach-Object { 
-    Add-VMHost dc2-esxi-2-0$_.infra.local -Location (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
+if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
+    1..5 | Foreach-Object { 
+        Add-VMHost dc1-esxi-2-0$_.infra.local -Location  (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
+    }
+    1..5 | Foreach-Object { 
+        Add-VMHost dc2-esxi-2-0$_.infra.local -Location (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
+    }
+} else {
+    Write-Host Cluster $p.cluster does not exist! Nothing Done. -ForegroundColor Yellow
 }
 
 #HARDE STOP!
