@@ -114,14 +114,15 @@ foreach ($esx in $esxihosts){
 }
 
 #Exit Maintenance Mode all Hosts
-$cluster = "$p.cluster"
 $esxihosts = get-cluster $p.cluster |get-vmhost
 foreach ($esx in $esxihosts){
-    Set-VMHost $esx -State Connected
+    if ((Get-VMHost $esx | Where-Object {$_.ConnectionState -eq "Maintenance"})){
+        Set-VMHost $esx -State Connected | Out-Null
+        Write-Host Exited Maintenance Mode on $esx -ForegroundColor Yellow
+    } else {
+        Write-Host $esx not in Maintenance Mode. -ForegroundColor Yellow
+    }
 }
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
 
 #Connect DVSwitch to all Hosts
 $cluster = "$p.cluster"
