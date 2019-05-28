@@ -11,38 +11,58 @@ Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass
 
 #Create Datacenter and Cluster Objects
 $location = Get-Folder -NoRecursion
-New-Datacenter $p.datacenter -Location $location
-New-Cluster $p.cluster -Location $p.datacenter
+if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
+    Write-Host Datacenter $p.datacenter already exists! -ForegroundColor Yellow
+ } else {
+    New-Datacenter $p.datacenter -Location $location
+ }
+ if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
+    Write-Host Cluster $p.cluster already exists! -ForegroundColor Yellow
+} else {
+    New-Cluster $p.cluster -Location $p.datacenter
+}
 
 #HARDE STOP!
 [void](Read-Host 'Press Enter to continue')
 
-#Create DVSwitch and Portgroups
-$cluster = "$p.cluster"
-if ((Get-VDSwitch |Where-Object {$_.Name -ne $p.dvs})) {
-    New-VDSwitch -Location $p.datacenter -Name $p.dvs -NumUplinkPorts 2 -Mtu 9000
-} else {
-    Write-Host Portgroup $p.dvs already exists! -ForegroundColor Yellow
-}
-if ((Get-VDPortgroup $p.resourcemgmtportgroup| Where-Object {$_.Name -ne $p.resourcemgmtportgroup})){
-    New-VDPortgroup -Name $p.resourcemgmtportgroup -VlanId $p.rscmgmtvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
-} else {
-    Write-Host Portgroup $p.resourcemgmtportgroup already exists! -ForegroundColor Yellow
-} 
-if ((Get-VDPortgroup $p.vmotionportgroup| Where-Object {$_.Name -ne $p.vmotionportgroup})){
-    New-VDPortgroup -Name $p.vmotionportgroup -VlanId $p.vmotionvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
-} else {
-    Write-Host Portgroup $p.vmotionportgroup already exists! -ForegroundColor Yellow
-} 
-if ((Get-VDPortgroup $p.provisioningportgroup| Where-Object {$_.Name -ne $p.provisioningportgroup})){
-    New-VDPortgroup -Name $p.provisioningportgroup -VlanId $p.provisioningvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
-} else {
-    Write-Host Portgroup $p.provisioningportgroup already exists! -ForegroundColor Yellow
-} 
-if ((Get-VDPortgroup $p.vsanportgroup| Where-Object {$_.Name -ne $p.vsanportgroup})){
-    New-VDPortgroup -Name $p.vsanportgroup -VlanId $p.vsanvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
-} else {
-    Write-Host Portgroup $p.vsanportgroup already exists! -ForegroundColor Yellow
+if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
+    #Create DVSwitch $p.dvs
+    $cluster = "$p.cluster"
+    if ((Get-VDSwitch |Where-Object {$_.Name -eq $p.dvs})) {
+        Write-Host Portgroup $p.dvs already exists! -ForegroundColor Yellow
+    } else {
+        New-VDSwitch -Location $p.datacenter -Name $p.dvs -NumUplinkPorts 2 -Mtu 9000
+    }
+
+    #Create $p.resourcemgmtportgroup Portgroup
+    if ((Get-VDSwitch $p.dvs | Get-VDPortgroup | Where-Object {$_.Name -eq $p.resourcemgmtportgroup})){
+        Write-Host Portgroup $p.resourcemgmtportgroup already exists! -ForegroundColor Yellow
+    } else {
+        New-VDPortgroup -Name $p.resourcemgmtportgroup -VlanId $p.rscmgmtvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs    
+    }
+
+    #Create $p.vmotionportgroup Portgroup
+    if ((Get-VDSwitch $p.dvs | Get-VDPortgroup | Where-Object {$_.Name -eq $p.vmotionportgroup})){
+        Write-Host Portgroup $p.vmotionportgroup already exists! -ForegroundColor Yellow
+    } else {
+        New-VDPortgroup -Name $p.vmotionportgroup -VlanId $p.vmotionvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs    
+    }
+
+    #Create $p.provisioningportgroup Portgroup
+    if ((Get-VDSwitch $p.dvs | Get-VDPortgroup | Where-Object {$_.Name -eq $p.provisioningportgroup})){
+        Write-Host Portgroup $p.provisioningportgroup already exists! -ForegroundColor Yellow
+    } else {
+        New-VDPortgroup -Name $p.provisioningportgroup -VlanId $p.provisioningvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs    
+    }
+
+    #Create $p.provisioningportgroup Portgroup
+    if ((Get-VDSwitch $p.dvs | Get-VDPortgroup | Where-Object {$_.Name -eq $p.vsanportgroup})){
+        Write-Host Portgroup $p.vsanportgroup already exists! -ForegroundColor Yellow
+    } else {
+        New-VDPortgroup -Name $p.vsanportgroup -VlanId $p.vsanvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs    
+    }
+ } else {
+    Write-Host Datacenter $p.datacenter does not exist! -ForegroundColor Yellow
 }
 
 #HARDE STOP!
