@@ -19,7 +19,7 @@ New-Cluster $p.cluster -Location $p.datacenter
 
 #Create DVSwitch and Portgroups
 $cluster = "$p.cluster"
-if ((Get-VDSwitch |Where-Object {$_.Name -ne "$p.dvs"})) {
+if ((Get-VDSwitch |Where-Object {$_.Name -ne $p.dvs})) {
     New-VDSwitch -Location $p.datacenter -Name $p.dvs -NumUplinkPorts 2 -Mtu 9000
 } else {
     Write-Host Portgroup $p.dvs already exists! -ForegroundColor Yellow
