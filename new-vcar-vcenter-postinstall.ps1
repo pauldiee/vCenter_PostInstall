@@ -21,11 +21,29 @@ New-Cluster $p.cluster -Location $p.datacenter
 $cluster = "$p.cluster"
 if ((Get-VDSwitch |Where-Object {$_.Name -ne "$p.dvs"})) {
     New-VDSwitch -Location $p.datacenter -Name $p.dvs -NumUplinkPorts 2 -Mtu 9000
-}#if condition
-New-VDPortgroup -Name $p.resourcemgmtportgroup -VlanId $p.rscmgmtvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
-New-VDPortgroup -Name $p.vmotionportgroup -VlanId $p.vmotionvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
-New-VDPortgroup -Name $p.provisioningportgroup -VlanId $p.provisioningvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
-New-VDPortgroup -Name $p.vsanportgroup -VlanId $p.vsanvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
+} else {
+    Write-Host Portgroup $p.dvs already exists! -ForegroundColor Yellow
+}
+if ((Get-VDPortgroup $p.resourcemgmtportgroup| Where-Object {$_.Name -ne $p.resourcemgmtportgroup})){
+    New-VDPortgroup -Name $p.resourcemgmtportgroup -VlanId $p.rscmgmtvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
+} else {
+    Write-Host Portgroup $p.resourcemgmtportgroup already exists! -ForegroundColor Yellow
+} 
+if ((Get-VDPortgroup $p.vmotionportgroup| Where-Object {$_.Name -ne $p.vmotionportgroup})){
+    New-VDPortgroup -Name $p.vmotionportgroup -VlanId $p.vmotionvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
+} else {
+    Write-Host Portgroup $p.vmotionportgroup already exists! -ForegroundColor Yellow
+} 
+if ((Get-VDPortgroup $p.provisioningportgroup| Where-Object {$_.Name -ne $p.provisioningportgroup})){
+    New-VDPortgroup -Name $p.provisioningportgroup -VlanId $p.provisioningvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
+} else {
+    Write-Host Portgroup $p.provisioningportgroup already exists! -ForegroundColor Yellow
+} 
+if ((Get-VDPortgroup $p.vsanportgroup| Where-Object {$_.Name -ne $p.vsanportgroup})){
+    New-VDPortgroup -Name $p.vsanportgroup -VlanId $p.vsanvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs
+} else {
+    Write-Host Portgroup $p.vsanportgroup already exists! -ForegroundColor Yellow
+}
 
 #HARDE STOP!
 [void](Read-Host 'Press Enter to continue')
@@ -248,7 +266,6 @@ ForEach ($esxi in $esxihosts){
         #Creeer de diskgroup met de hierboven verkegen WWNs - pas deze aan als het aantal disks anders is dan 8 per diskgroep
         New-VsanDiskGroup -VMHost $esxi -SsdCanonicalName $disk3[0] -DataDiskCanonicalName $disk3[1],$disk3[2],$disk3[3],$disk3[4],$disk3[5],$disk3[6],$disk3[7]
 }
-
     #Maak een csv aan met de diskgroup info voor de host
     get-vsandisk -vmhost $esxi |Select-Object VsanDiskGroup, CanonicalName |Export-Csv $WorkingDir\${esxi}.diskgroups.csv
     #DisableSSH
