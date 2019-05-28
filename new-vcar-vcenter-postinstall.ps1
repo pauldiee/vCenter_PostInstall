@@ -125,14 +125,15 @@ foreach ($esx in $esxihosts){
 }
 
 #Connect DVSwitch to all Hosts
-$cluster = "$p.cluster"
 $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
-    Get-VDSwitch -Name Resource-DVS | Add-VDSwitchVMHost -VMHost $esx
+    if ((Get-VDSwitch -VMHost $esx | Where-Object {$_.Name -eq $p.dvs})){
+    Write-Host $p.dvs Already Connected to $esx! -ForegroundColor Yellow    
+    } else{
+    Get-VDSwitch -Name $p.dvs | Add-VDSwitchVMHost -VMHost $esx
+    Write-Host $p.dvs Connected to $esx! -ForegroundColor Yellow
+    }
 }
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
 
 #Add Uplinks to all Hosts for DVSwitch
 $cluster = "$p.cluster"
