@@ -83,9 +83,6 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
     Write-Host Datacenter $p.datacenter does not exist! Nothing created. -ForegroundColor Yellow
 }
 
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
-
 #Add 10 Hosts to vCenter 5 per MER (Cluster and Datacenter)
 if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
     1..5 | Foreach-Object { 
@@ -100,23 +97,21 @@ if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
     Write-Host Cluster $p.cluster does not exist! Nothing Done. -ForegroundColor Yellow
 }
 
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
-
 #Configure NTP server
-$cluster = "$p.cluster"
 $esxihosts = get-cluster $p.cluster |get-vmhost
 foreach ($esx in $esxihosts){
-    Add-VmHostNtpServer -VMHost $esx -NtpServer $ntpserver
-    #Allow NTP queries outbound through the firewall
-    Get-VMHostFirewallException -VMHost $esx | Where-Object {$_.Name -eq "NTP client"} | Set-VMHostFirewallException -Enabled:$true
-    #Start NTP client service and set to automatic
-    Get-VmHostService -VMHost $esx | Where-Object {$_.key -eq "ntpd"} | Start-VMHostService
-    Get-VmHostService -VMHost $esx | Where-Object {$_.key -eq "ntpd"} | Set-VMHostService -policy "automatic"
+    if ((Get-VMHostNtpServer -VMHost $esx | Where-Object {$_.Name -ne $p.ntpserver})){
+        Write-Host NTP Server already set on $esx. -ForegroundColor Yellow
+    } else {
+        Add-VmHostNtpServer -VMHost $esx -NtpServer $p.ntpserver | Out-Null
+        #Allow NTP queries outbound through the firewall
+        Get-VMHostFirewallException -VMHost $esx | Where-Object {$_.Name -eq "NTP client"} | Set-VMHostFirewallException -Enabled:$true  | Out-Null
+        #Start NTP client service and set to automatic
+        Get-VmHostService -VMHost $esx | Where-Object {$_.key -eq "ntpd"} | Start-VMHostService  | Out-Null
+        Get-VmHostService -VMHost $esx | Where-Object {$_.key -eq "ntpd"} | Set-VMHostService -policy "automatic"  | Out-Null
+        Write-Host Done setting up NTP on $esx! -ForegroundColor Yellow
+        }
 }
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
 
 #Exit Maintenance Mode all Hosts
 $cluster = "$p.cluster"
