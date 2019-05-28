@@ -128,36 +128,41 @@ foreach ($esx in $esxihosts){
 $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
     if ((Get-VDSwitch -VMHost $esx | Where-Object {$_.Name -eq $p.dvs})){
-    Write-Host $p.dvs Already Connected to $esx! -ForegroundColor Yellow    
+        Write-Host $p.dvs Already Connected to $esx! -ForegroundColor Yellow    
     } else{
-    Get-VDSwitch -Name $p.dvs | Add-VDSwitchVMHost -VMHost $esx
-    $vmhostNetworkAdapter1 = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic2"
-    $vmhostNetworkAdapter2 = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic3"
-    Get-VDSwitch -Name $p.dvs | Add-VDSwitchPhysicalNetworkAdapter -VMHostNetworkAdapter $vmhostNetworkAdapter1 -Confirm:$false | Out-Null
-    Get-VDSwitch -Name $p.dvs | Add-VDSwitchPhysicalNetworkAdapter -VMHostNetworkAdapter $vmhostNetworkAdapter2 -Confirm:$false | Out-Null
-    Write-Host $p.dvs Connected to $esx! -ForegroundColor Yellow
-    Write-Host $vmhostNetworkAdapter1 and $vmhostNetworkAdapter2 Connected on $esx to $p.dvs -ForegroundColor Yellow
+        Get-VDSwitch -Name $p.dvs | Add-VDSwitchVMHost -VMHost $esx
+        $vmhostNetworkAdapter1 = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic2"
+        $vmhostNetworkAdapter2 = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic3"
+        Get-VDSwitch -Name $p.dvs | Add-VDSwitchPhysicalNetworkAdapter -VMHostNetworkAdapter $vmhostNetworkAdapter1 -Confirm:$false | Out-Null
+        Get-VDSwitch -Name $p.dvs | Add-VDSwitchPhysicalNetworkAdapter -VMHostNetworkAdapter $vmhostNetworkAdapter2 -Confirm:$false | Out-Null
+        Write-Host $p.dvs Connected to $esx! -ForegroundColor Yellow
+        Write-Host $vmhostNetworkAdapter1 and $vmhostNetworkAdapter2 Connected on $esx to $p.dvs -ForegroundColor Yellow
     }
 }
 
 #Add Uplinks to all Hosts for vSwitch0 and set Security to reject all
 $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
+    if ((Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Where-Object {$_.nic -eq "vmnic1" -and "vmnic0"})){
+        Write-Host vSwitch0 already properly configured on $esx -ForegroundColor Yellow    
+    } else{
     $vmhostLocalNetworkAdapter = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic1"
-    Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic $vmhostLocalNetworkAdapter -Confirm:$false
-    Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-SecurityPolicy| Set-SecurityPolicy -AllowPromiscuous $false -ForgedTransmits $false -MacChanges $false | Out-Null
-    Write-Host Connected $vmhostLocalNetworkAdapter to vSwitch0 on $esx! -ForegroundColor Yellow
+        Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic $vmhostLocalNetworkAdapter -Confirm:$false
+        Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-SecurityPolicy| Set-SecurityPolicy -AllowPromiscuous $false -ForgedTransmits $false -MacChanges $false | Out-Null
+        Write-Host Connected $vmhostLocalNetworkAdapter to vSwitch0 on $esx! -ForegroundColor Yellow
+    }
 }
 
 #Remove default portgroup on vSwitch0
-$cluster = "$p.cluster"
 $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
-    Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-VirtualPortGroup -Name "VM Network"| Remove-VirtualPortGroup -Confirm:$false
+    if ((Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-VirtualPortGroup | Where-Object {$_.Name -eq "VM Network"})){
+        Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-VirtualPortGroup -Name "VM Network"| Remove-VirtualPortGroup -Confirm:$false
+        Write-Host Removed Portgroup VM Network from vSwitch0 on $esx! -ForegroundColor Yellow
+    } else{
+        Write-Host Portgroup VM Network already removed! -ForegroundColor Yellow
+    }
 }
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
 
 #Create vSAN VMkernel
 $Esxi_Hosts = Import-CSV $WorkingDir\vsan_vmkernels.csv
