@@ -18,3 +18,5 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
     New-Cluster $p.cluster -Location $p.datacenter | Out-Null
     Write-Host Cluster $p.cluster Created! -ForegroundColor Yellow
 }
+
+Disconnect-VIServer -Force

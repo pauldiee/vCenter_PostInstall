@@ -48,3 +48,5 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
  } else {
     Write-Host Datacenter $p.datacenter does not exist! Nothing created. -ForegroundColor Yellow
 }
+
+Disconnect-VIServer -Force

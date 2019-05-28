@@ -20,7 +20,7 @@ $secureStringPwd = $p.esxipass | ConvertTo-SecureString -AsPlainText -Force
 $esxicredential = New-Object -TypeName System.Management.Automation.PSCredential($p.esxiuser,$secureStringPwd)
 
 #Connect to vCenter
-Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass | Out-Null
+Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force | Out-Null
 
 #Create Datacenter and Cluster Objects
 $location = Get-Folder -NoRecursion
@@ -37,9 +37,7 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
     Write-Host Cluster $p.cluster Created! -ForegroundColor Yellow
 }
 
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
-
+# Switch and Portgroups
 if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
     #Create DVSwitch $p.dvs
     $cluster = "$p.cluster"
@@ -88,13 +86,15 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
 #HARDE STOP!
 [void](Read-Host 'Press Enter to continue')
 
-#Add 10 Hosts to vCenter 5 per MER(Cluster and Datacenter)
+#Add 10 Hosts to vCenter 5 per MER (Cluster and Datacenter)
 if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
     1..5 | Foreach-Object { 
         Add-VMHost dc1-esxi-2-0$_.infra.local -Location  (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
+        Write-Host Hosts dc1-esxi-2-0$_.infra.local added to $p.cluster -ForegroundColor Yellow
     }
     1..5 | Foreach-Object { 
         Add-VMHost dc2-esxi-2-0$_.infra.local -Location (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
+        Write-Host Hosts dc2-esxi-2-0$_.infra.local added to $p.cluster -ForegroundColor Yellow
     }
 } else {
     Write-Host Cluster $p.cluster does not exist! Nothing Done. -ForegroundColor Yellow
