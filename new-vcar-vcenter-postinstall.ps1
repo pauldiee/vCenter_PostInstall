@@ -25,16 +25,16 @@ Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force
 #Create Datacenter and Cluster Objects
 $location = Get-Folder -NoRecursion
 if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
-    Write-Host Datacenter $p.datacenter already exists! -ForegroundColor Yellow
+    Write-Host Datacenter $p.datacenter already exists! -ForegroundColor Cyan
  } else {
     New-Datacenter $p.datacenter -Location $location | Out-Null
-    Write-Host Datacenter $p.datacenter Created! -ForegroundColor Yellow
+    Write-Host Datacenter $p.datacenter Created! -ForegroundColor Green
  }
  if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
-    Write-Host Cluster $p.cluster already exists! -ForegroundColor Yellow
+    Write-Host Cluster $p.cluster already exists! -ForegroundColor Cyan
 } else {
     New-Cluster $p.cluster -Location $p.datacenter | Out-Null
-    Write-Host Cluster $p.cluster Created! -ForegroundColor Yellow
+    Write-Host Cluster $p.cluster Created! -ForegroundColor Green
 }
 
 # Switch and Portgroups
@@ -42,45 +42,45 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
     #Create DVSwitch $p.dvs
     $cluster = "$p.cluster"
     if ((Get-VDSwitch |Where-Object {$_.Name -eq $p.dvs})) {
-        Write-Host Portgroup $p.dvs already exists! -ForegroundColor Yellow
+        Write-Host Portgroup $p.dvs already exists! -ForegroundColor Cyan
     } else {
         New-VDSwitch -Location $p.datacenter -Name $p.dvs -NumUplinkPorts 2 -Mtu 9000 | Out-Null
-        Write-Host Distributed Switch $p.dvs Created! -ForegroundColor Yellow
+        Write-Host Distributed Switch $p.dvs Created! -ForegroundColor Green
     }
 
     #Create $p.resourcemgmtportgroup Portgroup
     if ((Get-VDSwitch $p.dvs | Get-VDPortgroup | Where-Object {$_.Name -eq $p.resourcemgmtportgroup})){
-        Write-Host Portgroup $p.resourcemgmtportgroup already exists! -ForegroundColor Yellow
+        Write-Host Portgroup $p.resourcemgmtportgroup already exists! -ForegroundColor Cyan
     } else {
         New-VDPortgroup -Name $p.resourcemgmtportgroup -VlanId $p.rscmgmtvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs | Out-Null
-        Write-Host Portgroup $p.resourcemgmtportgroup Created! -ForegroundColor Yellow    
+        Write-Host Portgroup $p.resourcemgmtportgroup Created! -ForegroundColor Green
     }
 
     #Create $p.vmotionportgroup Portgroup
     if ((Get-VDSwitch $p.dvs | Get-VDPortgroup | Where-Object {$_.Name -eq $p.vmotionportgroup})){
-        Write-Host Portgroup $p.vmotionportgroup already exists! -ForegroundColor Yellow
+        Write-Host Portgroup $p.vmotionportgroup already exists! -ForegroundColor Cyan
     } else {
         New-VDPortgroup -Name $p.vmotionportgroup -VlanId $p.vmotionvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs | Out-Null
-        Write-Host Portgroup $p.vmotionportgroup Created! -ForegroundColor Yellow    
+        Write-Host Portgroup $p.vmotionportgroup Created! -ForegroundColor Green    
     }
 
     #Create $p.provisioningportgroup Portgroup
     if ((Get-VDSwitch $p.dvs | Get-VDPortgroup | Where-Object {$_.Name -eq $p.provisioningportgroup})){
-        Write-Host Portgroup $p.provisioningportgroup already exists! -ForegroundColor Yellow
+        Write-Host Portgroup $p.provisioningportgroup already exists! -ForegroundColor Cyan
     } else {
         New-VDPortgroup -Name $p.provisioningportgroup -VlanId $p.provisioningvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs | Out-Null
-        Write-Host Portgroup $p.provisioningportgroup Created! -ForegroundColor Yellow    
+        Write-Host Portgroup $p.provisioningportgroup Created! -ForegroundColor Green    
     }
 
     #Create $p.provisioningportgroup Portgroup
     if ((Get-VDSwitch $p.dvs | Get-VDPortgroup | Where-Object {$_.Name -eq $p.vsanportgroup})){
-        Write-Host Portgroup $p.vsanportgroup already exists! -ForegroundColor Yellow
+        Write-Host Portgroup $p.vsanportgroup already exists! -ForegroundColor Cyan
     } else {
         New-VDPortgroup -Name $p.vsanportgroup -VlanId $p.vsanvlan -PortBinding static -NumPorts 8 -VDSwitch $p.dvs | Out-Null
-        Write-Host Portgroup $p.vsanportgroup Created! -ForegroundColor Yellow    
+        Write-Host Portgroup $p.vsanportgroup Created! -ForegroundColor Green    
     }
  } else {
-    Write-Host Datacenter $p.datacenter does not exist! Nothing created. -ForegroundColor Yellow
+    Write-Host Datacenter $p.datacenter does not exist! -ForegroundColor Cyan
 }
 
 #Add 10 Hosts to vCenter 5 per MER (Cluster and Datacenter)
@@ -118,7 +118,7 @@ foreach ($esx in $esxihosts){
         Get-VmHostService -VMHost $esx | Where-Object {$_.key -eq "ntpd"} | Start-VMHostService  | Out-Null
         Get-VmHostService -VMHost $esx | Where-Object {$_.key -eq "ntpd"} | Set-VMHostService -policy "automatic"  | Out-Null
         Write-Host Done setting up NTP on $esx! -ForegroundColor Green
-        }
+    }
 }
 
 #Exit Maintenance Mode all Hosts
@@ -136,7 +136,7 @@ foreach ($esx in $esxihosts){
 $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
     if ((Get-VDSwitch -VMHost $esx | Where-Object {$_.Name -eq $p.dvs})){
-        Write-Host $p.dvs Already Connected to $esx! -ForegroundColor Cyan
+        Write-Host $p.dvs Already Connected to $esx! -ForegroundColor Cyan  
     } else{
         Get-VDSwitch -Name $p.dvs | Add-VDSwitchVMHost -VMHost $esx
         $vmhostNetworkAdapter1 = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic2"
@@ -152,9 +152,9 @@ ForEach ($esx in $esxihosts){
 $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
     if ((Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Where-Object {$_.nic -eq "vmnic1" -and "vmnic0"})){
-        Write-Host vSwitch0 already properly configured on $esx -ForegroundColor Cyan    
+        Write-Host vSwitch0 already properly configured on $esx -ForegroundColor Cyan   
     } else{
-    $vmhostLocalNetworkAdapter = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic1"
+        $vmhostLocalNetworkAdapter = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic1"
         Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic $vmhostLocalNetworkAdapter -Confirm:$false
         Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-SecurityPolicy| Set-SecurityPolicy -AllowPromiscuous $false -ForgedTransmits $false -MacChanges $false | Out-Null
         Write-Host Connected $vmhostLocalNetworkAdapter to vSwitch0 on $esx! -ForegroundColor Green

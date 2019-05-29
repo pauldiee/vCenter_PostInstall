@@ -9,9 +9,9 @@ $esxihosts = get-cluster $p.cluster |get-vmhost
 foreach ($esx in $esxihosts){
     if ((Get-VMHost $esx | Where-Object {$_.ConnectionState -eq "Maintenance"})){
         Set-VMHost $esx -State Connected | Out-Null
-        Write-Host Exited Maintenance Mode on $esx -ForegroundColor Yellow
+        Write-Host Exited Maintenance Mode on $esx -ForegroundColor Green
     } else {
-        Write-Host $esx not in Maintenance Mode. -ForegroundColor Yellow
+        Write-Host $esx not in Maintenance Mode. -ForegroundColor Cyan
     }
 }
 Disconnect-VIServer -Force -Confirm:$false
