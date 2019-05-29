@@ -165,87 +165,95 @@ ForEach ($esx in $esxihosts){
 }
 
 #Create vSAN VMkernel
-$Esxi_Hosts = Import-CSV $WorkingDir\vsan_vmkernels.csv
-Foreach ($_ in $Esxi_Hosts){
-    New-VMHostNetworkAdapter -VMHost $_.ESXI_Host -PortGroup $p.vsanportgroup -VirtualSwitch $p.dvs -IP $_.IP -SubnetMask $p.subnetmask -MTU 1500 -VsanTrafficEnabled $true
+$Esxi_Hosts_vsan = Import-CSV ".\vsan_vmkernels.csv"
+Foreach ($esxi in $Esxi_Hosts_vsan){
+    if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {($_.VsanTrafficEnabled -eq $true)})){
+        Write-Host vSAN vmkernel already exists! -ForegroundColor Cyan
+    } else{
+        New-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host -PortGroup $p.vsanportgroup -VirtualSwitch $p.dvs -IP $esxi.IP -SubnetMask $p.subnetmask -MTU 1500 -VsanTrafficEnabled $true | Out-Null
+        Write-Host vSAN vmkernel created! -ForegroundColor Green
+    }
 }
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
 
 #Create vMotion VMkernel
-$Esxi_Hosts = Import-CSV $WorkingDir\vmotion_vmkernels.csv
-Foreach ($esxi in $Esxi_Hosts){
-    $esxcli = Get-EsxCli -VMHost $esxi.ESXI_Host -V2
+$Esxi_Hosts_vmotion = Import-CSV ".\vmotion_vmkernels.csv"
+Foreach ($esxi in $Esxi_Hosts_vmotion){
+    if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {($_.VMotionEnabled -eq $true)})){
+        Write-Host vMotion vmkernel already exists! -ForegroundColor Cyan
+    } else{
+        $esxcli = Get-EsxCli -VMHost $esxi.ESXI_Host -V2
            
-    #Create vmotion netstack
-    $esxcli.network.ip.netstack.add.invoke(@{netstack = "vmotion"})
+        #Create vmotion netstack
+        $esxcli.network.ip.netstack.add.invoke(@{netstack = "vmotion"}) | Out-Null
     
-    #Create Temp Portgroup for Kernel
-    $vswitch = Get-VirtualSwitch -Standard -VMHost $esxi.ESXI_Host
-    New-VirtualPortGroup -VirtualSwitch $vswitch -Name "VMOTIONTEMP"
+        #Create Temp Portgroup for Kernel
+        $vswitch = Get-VirtualSwitch -Standard -VMHost $esxi.ESXI_Host
+        New-VirtualPortGroup -VirtualSwitch $vswitch -Name "VMOTIONTEMP" | Out-Null
 
-    #Create VMKERNEL ON LOCAL vswitch
-    $arguments = $esxcli.network.ip.interface.add.CreateArgs()
-    $arguments.mtu = "1500"
-    $arguments.portgroupname = "VMOTIONTEMP"
-    $arguments.netstack = "vmotion"
-    $arguments.interfacename = "vmk2"
-    $esxcli.network.ip.interface.add.Invoke($arguments)
+        #Create VMKERNEL ON LOCAL vswitch
+        $arguments = $esxcli.network.ip.interface.add.CreateArgs()
+        $arguments.mtu = "1500"
+        $arguments.portgroupname = "VMOTIONTEMP"
+        $arguments.netstack = "vmotion"
+        $arguments.interfacename = "vmk2"
+        $esxcli.network.ip.interface.add.Invoke($arguments) | Out-Null
 
-    #Set IP Configuration
-    $vmk = Get-VMHostNetworkAdapter -Name "vmk2" -VMHost $esxi.ESXI_Host
-    Set-VMHostNetworkAdapter -VirtualNic $vmk -IP $esxi.IP -SubnetMask $p.subnetmask -IPv6Enabled $false -Confirm:$false
+        Start-Sleep -Seconds 10
 
-    #Migrate vmotion vmk to Distibuted Portgroup
-    $vmk = Get-VMHostNetworkAdapter -Name "vmk2" -VMHost $esxi.ESXI_Host
-    Set-VMHostNetworkAdapter -PortGroup $p.vmotionportgroup -VirtualNic $vmk -Confirm:$false
+        #Set IP Configuration
+        $vmk = Get-VMHostNetworkAdapter -Name "vmk2" -VMHost $esxi.ESXI_Host
+        Set-VMHostNetworkAdapter -VirtualNic $vmk -IP $esxi.IP -SubnetMask $p.subnetmask -IPv6Enabled $false -Confirm:$false | Out-Null
 
-    #Remove Temp Portgroup for Kernel
-    $pg = Get-VirtualPortGroup -VirtualSwitch $vswitch -VMHost $esxi.ESXI_Host -Standard -Name "VMOTIONTEMP"
-    Remove-VirtualPortGroup -VirtualPortGroup $pg -Confirm:$false
+        #Migrate vmotion vmk to Distibuted Portgroup
+        $vmk = Get-VMHostNetworkAdapter -Name "vmk2" -VMHost $esxi.ESXI_Host
+        Set-VMHostNetworkAdapter -PortGroup $p.vmotionportgroup -VirtualNic $vmk -Confirm:$false | Out-Null
+
+        #Remove Temp Portgroup for Kernel
+        $pg = Get-VirtualPortGroup -VirtualSwitch $vswitch -VMHost $esxi.ESXI_Host -Standard -Name "VMOTIONTEMP"
+        Remove-VirtualPortGroup -VirtualPortGroup $pg -Confirm:$false | Out-Null
+        Write-Host vMotion vmkernel created! -ForegroundColor Green
+    }
 }
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
 
 #Create Provisioning VMkernel
-$Esxi_Hosts = Import-CSV C:\Beheer\Scripts\provisioning_vmkernels.csv
-Foreach ($esxi in $Esxi_Hosts){
-    $esxcli = Get-EsxCli -VMHost $esxi.ESXI_Host -V2
+$Esxi_Hosts_prov = Import-CSV ".\provisioning_vmkernels.csv"
+Foreach ($esxi in $Esxi_Hosts_prov){
+    if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {$_.IP -eq $esxi.IP})){
+        Write-Host Provisioning vmkernel already exists! -ForegroundColor Cyan
+    } else{
+        $esxcli = Get-EsxCli -VMHost $esxi.ESXI_Host -V2
            
-    #Create vmotion netstack
-    $esxcli.network.ip.netstack.add.invoke(@{netstack = "vSphereProvisioning"})
+        #Create Provisioning netstack
+        $esxcli.network.ip.netstack.add.invoke(@{netstack = "vSphereProvisioning"}) | Out-Null
     
-    #Create Temp Portgroup for Kernel
-    $vswitch = Get-VirtualSwitch -Standard -VMHost $esxi.ESXI_Host
-    New-VirtualPortGroup -VirtualSwitch $vswitch -Name "PROVISIONINGTEMP"
+        #Create Temp Portgroup for Kernel
+        $vswitch = Get-VirtualSwitch -Standard -VMHost $esxi.ESXI_Host
+        New-VirtualPortGroup -VirtualSwitch $vswitch -Name "PROVISIONINGTEMP" | Out-Null
 
-    #Create VMKERNEL ON LOCAL vswitch
-    $arguments = $esxcli.network.ip.interface.add.CreateArgs()
-    $arguments.mtu = "1500"
-    $arguments.portgroupname = "PROVISIONINGTEMP"
-    $arguments.netstack = "vSphereProvisioning"
-    $arguments.interfacename = "vmk3"
-    $esxcli.network.ip.interface.add.Invoke($arguments)
+        #Create VMKERNEL ON LOCAL vswitch
+        $arguments = $esxcli.network.ip.interface.add.CreateArgs()
+        $arguments.mtu = "1500"
+        $arguments.portgroupname = "PROVISIONINGTEMP"
+        $arguments.netstack = "vSphereProvisioning"
+        $arguments.interfacename = "vmk3"
+        $esxcli.network.ip.interface.add.Invoke($arguments) | Out-Null
 
-    Start-Sleep -Seconds 10
+        Start-Sleep -Seconds 10
 
-    #Set IP Configuration
-    $vmk = Get-VMHostNetworkAdapter -Name "vmk3" -VMHost $esxi.ESXI_Host
-    Set-VMHostNetworkAdapter -VirtualNic $vmk -IP $esxi.IP -SubnetMask $p.subnetmask -IPv6Enabled $false -Confirm:$false
+        #Set IP Configuration
+        $vmk = Get-VMHostNetworkAdapter -Name "vmk3" -VMHost $esxi.ESXI_Host
+        Set-VMHostNetworkAdapter -VirtualNic $vmk -IP $esxi.IP -SubnetMask $p.subnetmask -IPv6Enabled $false -Confirm:$false | Out-Null
 
-    #Migrate Kernel to Distibuted Portgroup
-    $vmk = Get-VMHostNetworkAdapter -Name "vmk3" -VMHost $esxi.ESXI_Host
-    Set-VMHostNetworkAdapter -PortGroup $p.provisioningportgroup -VirtualNic $vmk -Confirm:$false
+        #Migrate Kernel to Distibuted Portgroup
+        $vmk = Get-VMHostNetworkAdapter -Name "vmk3" -VMHost $esxi.ESXI_Host
+        Set-VMHostNetworkAdapter -PortGroup $p.provisioningportgroup -VirtualNic $vmk -Confirm:$false | Out-Null
 
-    #Remove Temp Portgroup for Kernel
-    $pg = Get-VirtualPortGroup -VirtualSwitch $vswitch -VMHost $esxi.ESXI_Host -Standard -Name "PROVISIONINGTEMP"
-    Remove-VirtualPortGroup -VirtualPortGroup $pg -Confirm:$false
+        #Remove Temp Portgroup for Kernel
+        $pg = Get-VirtualPortGroup -VirtualSwitch $vswitch -VMHost $esxi.ESXI_Host -Standard -Name "PROVISIONINGTEMP"
+        Remove-VirtualPortGroup -VirtualPortGroup $pg -Confirm:$false | Out-Null
+        Write-Host Provisioning vmkernel created! -ForegroundColor Green
+    }
 }
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
 
 #Set Powerconfig to High Performance
 $cluster = "$p.cluster"
