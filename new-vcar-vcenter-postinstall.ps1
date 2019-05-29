@@ -85,23 +85,31 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
 
 #Add 10 Hosts to vCenter 5 per MER (Cluster and Datacenter)
 if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
-    1..5 | Foreach-Object { 
-        Add-VMHost dc1-esxi-2-0$_.infra.local -Location  (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
-        Write-Host Hosts dc1-esxi-2-0$_.infra.local added to $p.cluster -ForegroundColor Yellow
+    1..5 | Foreach-Object {
+        if (($check = Get-VMHost dc1-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
+            Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
+        } else{
+            Add-VMHost dc1-esxi-2-0$_.infra.local -Location  (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true | Out-Null
+            Write-Host Host dc1-esxi-2-0$_.infra.local added to $p.cluster -ForegroundColor Green
+        }
     }
     1..5 | Foreach-Object { 
-        Add-VMHost dc2-esxi-2-0$_.infra.local -Location (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true
-        Write-Host Hosts dc2-esxi-2-0$_.infra.local added to $p.cluster -ForegroundColor Yellow
+        if (($check = Get-VMHost dc2-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
+            Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
+        } else{
+            Add-VMHost dc2-esxi-2-0$_.infra.local -Location (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true | Out-Null
+            Write-Host Host dc2-esxi-2-0$_.infra.local added to $p.cluster -ForegroundColor Green
+        }
     }
 } else {
-    Write-Host Cluster $p.cluster does not exist! Nothing Done. -ForegroundColor Yellow
+    Write-Host Cluster $p.cluster does not exist! -ForegroundColor Cyan
 }
 
 #Configure NTP server
 $esxihosts = get-cluster $p.cluster |get-vmhost
 foreach ($esx in $esxihosts){
     if ((Get-VMHostNtpServer -VMHost $esx | Where-Object {$_.Name -ne $p.ntpserver})){
-        Write-Host NTP Server already set on $esx. -ForegroundColor Yellow
+        Write-Host NTP Server already set on $esx. -ForegroundColor Cyan
     } else {
         Add-VmHostNtpServer -VMHost $esx -NtpServer $p.ntpserver | Out-Null
         #Allow NTP queries outbound through the firewall
@@ -109,7 +117,7 @@ foreach ($esx in $esxihosts){
         #Start NTP client service and set to automatic
         Get-VmHostService -VMHost $esx | Where-Object {$_.key -eq "ntpd"} | Start-VMHostService  | Out-Null
         Get-VmHostService -VMHost $esx | Where-Object {$_.key -eq "ntpd"} | Set-VMHostService -policy "automatic"  | Out-Null
-        Write-Host Done setting up NTP on $esx! -ForegroundColor Yellow
+        Write-Host Done setting up NTP on $esx! -ForegroundColor Green
         }
 }
 
@@ -118,9 +126,9 @@ $esxihosts = get-cluster $p.cluster |get-vmhost
 foreach ($esx in $esxihosts){
     if ((Get-VMHost $esx | Where-Object {$_.ConnectionState -eq "Maintenance"})){
         Set-VMHost $esx -State Connected | Out-Null
-        Write-Host Exited Maintenance Mode on $esx -ForegroundColor Yellow
+        Write-Host Exited Maintenance Mode on $esx -ForegroundColor Green
     } else {
-        Write-Host $esx not in Maintenance Mode. -ForegroundColor Yellow
+        Write-Host $esx not in Maintenance Mode. -ForegroundColor Cyan
     }
 }
 
@@ -128,15 +136,15 @@ foreach ($esx in $esxihosts){
 $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
     if ((Get-VDSwitch -VMHost $esx | Where-Object {$_.Name -eq $p.dvs})){
-        Write-Host $p.dvs Already Connected to $esx! -ForegroundColor Yellow    
+        Write-Host $p.dvs Already Connected to $esx! -ForegroundColor Cyan
     } else{
         Get-VDSwitch -Name $p.dvs | Add-VDSwitchVMHost -VMHost $esx
         $vmhostNetworkAdapter1 = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic2"
         $vmhostNetworkAdapter2 = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic3"
         Get-VDSwitch -Name $p.dvs | Add-VDSwitchPhysicalNetworkAdapter -VMHostNetworkAdapter $vmhostNetworkAdapter1 -Confirm:$false | Out-Null
         Get-VDSwitch -Name $p.dvs | Add-VDSwitchPhysicalNetworkAdapter -VMHostNetworkAdapter $vmhostNetworkAdapter2 -Confirm:$false | Out-Null
-        Write-Host $p.dvs Connected to $esx! -ForegroundColor Yellow
-        Write-Host $vmhostNetworkAdapter1 and $vmhostNetworkAdapter2 Connected on $esx to $p.dvs -ForegroundColor Yellow
+        Write-Host $p.dvs Connected to $esx! -ForegroundColor Green
+        Write-Host $vmhostNetworkAdapter1 and $vmhostNetworkAdapter2 Connected on $esx to $p.dvs -ForegroundColor Green
     }
 }
 
@@ -144,12 +152,12 @@ ForEach ($esx in $esxihosts){
 $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
     if ((Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Where-Object {$_.nic -eq "vmnic1" -and "vmnic0"})){
-        Write-Host vSwitch0 already properly configured on $esx -ForegroundColor Yellow    
+        Write-Host vSwitch0 already properly configured on $esx -ForegroundColor Cyan    
     } else{
     $vmhostLocalNetworkAdapter = Get-VMHost $esx | Get-VMHostNetworkAdapter -Physical -Name "vmnic1"
         Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic $vmhostLocalNetworkAdapter -Confirm:$false
         Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-SecurityPolicy| Set-SecurityPolicy -AllowPromiscuous $false -ForgedTransmits $false -MacChanges $false | Out-Null
-        Write-Host Connected $vmhostLocalNetworkAdapter to vSwitch0 on $esx! -ForegroundColor Yellow
+        Write-Host Connected $vmhostLocalNetworkAdapter to vSwitch0 on $esx! -ForegroundColor Green
     }
 }
 
@@ -158,9 +166,9 @@ $esxihosts = get-cluster $p.cluster |get-vmhost
 ForEach ($esx in $esxihosts){
     if ((Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-VirtualPortGroup | Where-Object {$_.Name -eq "VM Network"})){
         Get-VirtualSwitch -VMHost $esx -Name vSwitch0 | Get-VirtualPortGroup -Name "VM Network"| Remove-VirtualPortGroup -Confirm:$false
-        Write-Host Removed Portgroup VM Network from vSwitch0 on $esx! -ForegroundColor Yellow
+        Write-Host Removed Portgroup VM Network from vSwitch0 on $esx! -ForegroundColor Green
     } else{
-        Write-Host Portgroup VM Network already removed! -ForegroundColor Yellow
+        Write-Host Portgroup VM Network already removed! -ForegroundColor Cyan
     }
 }
 
