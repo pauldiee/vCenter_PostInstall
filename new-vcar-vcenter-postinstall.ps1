@@ -264,12 +264,14 @@ Foreach ($esxi in $Esxi_Hosts_prov){
 }
 
 #Set Powerconfig to High Performance
-$cluster = "$p.cluster"
 $esxihosts = get-cluster $p.cluster |get-vmhost
 foreach ($esx in $esxihosts){
     $view = (Get-VMHost $esx | Get-View)
     if ((Get-View $view.ConfigManager.PowerSystem).info.currentpolicy.key -ne 1){
         (Get-View $view.ConfigManager.PowerSystem).ConfigurePowerPolicy(1)
+        Write-Host $esx Power Management set to High Performance -ForegroundColor Green
+    } else{
+        Write-Host $esx already set to High Performance -ForegroundColor Cyan
     }
 }
 

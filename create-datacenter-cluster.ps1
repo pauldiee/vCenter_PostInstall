@@ -7,15 +7,15 @@ Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force
 #Create Datacenter and Cluster Objects
 $location = Get-Folder -NoRecursion
 if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
-    Write-Host Datacenter $p.datacenter already exists! -ForegroundColor Cyan
+    Write-Host $p.datacenter already exists! -ForegroundColor Cyan
  } else {
     New-Datacenter $p.datacenter -Location $location | Out-Null
-    Write-Host Datacenter $p.datacenter Created! -ForegroundColor Green
+    Write-Host $p.datacenter Created! -ForegroundColor Green
  }
  if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
-    Write-Host Cluster $p.cluster already exists! -ForegroundColor Cyan
+    Write-Host $p.cluster already exists! -ForegroundColor Cyan
 } else {
     New-Cluster $p.cluster -Location $p.datacenter | Out-Null
-    Write-Host Cluster $p.cluster Created! -ForegroundColor Green
+    Write-Host $p.cluster Created! -ForegroundColor Green
 }
 Disconnect-VIServer -Force -Confirm:$false

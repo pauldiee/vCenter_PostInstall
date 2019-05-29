@@ -8,10 +8,10 @@ Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force
 $Esxi_Hosts_vsan = Import-CSV ".\vsan_vmkernels.csv"
 Foreach ($esxi in $Esxi_Hosts_vsan){
     if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {($_.VsanTrafficEnabled -eq $true)})){
-        Write-Host vSAN vmkernel already exists! -ForegroundColor Cyan
+        Write-Host vSAN vmkernel already exists on $esxi.ESXI_Host -ForegroundColor Cyan
     } else{
         New-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host -PortGroup $p.vsanportgroup -VirtualSwitch $p.dvs -IP $esxi.IP -SubnetMask $p.subnetmask -MTU 1500 -VsanTrafficEnabled $true | Out-Null
-        Write-Host vSAN vmkernel created! -ForegroundColor Green
+        Write-Host vSAN vmkernel created on $esxi.ESXI_Host -ForegroundColor Green
     }
 }
 
@@ -19,7 +19,7 @@ Foreach ($esxi in $Esxi_Hosts_vsan){
 $Esxi_Hosts_vmotion = Import-CSV ".\vmotion_vmkernels.csv"
 Foreach ($esxi in $Esxi_Hosts_vmotion){
     if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {($_.VMotionEnabled -eq $true)})){
-        Write-Host vMotion vmkernel already exists! -ForegroundColor Cyan
+        Write-Host vMotion vmkernel already exists on $esxi.ESXI_Host -ForegroundColor Cyan
     } else{
         $esxcli = Get-EsxCli -VMHost $esxi.ESXI_Host -V2
            
@@ -51,7 +51,7 @@ Foreach ($esxi in $Esxi_Hosts_vmotion){
         #Remove Temp Portgroup for Kernel
         $pg = Get-VirtualPortGroup -VirtualSwitch $vswitch -VMHost $esxi.ESXI_Host -Standard -Name "VMOTIONTEMP"
         Remove-VirtualPortGroup -VirtualPortGroup $pg -Confirm:$false | Out-Null
-        Write-Host vMotion vmkernel created! -ForegroundColor Green
+        Write-Host vMotion vmkernel created on $esxi.ESXI_Host -ForegroundColor Green
     }
 }
 
@@ -59,7 +59,7 @@ Foreach ($esxi in $Esxi_Hosts_vmotion){
 $Esxi_Hosts_prov = Import-CSV ".\provisioning_vmkernels.csv"
 Foreach ($esxi in $Esxi_Hosts_prov){
     if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {$_.IP -eq $esxi.IP})){
-        Write-Host Provisioning vmkernel already exists! -ForegroundColor Cyan
+        Write-Host Provisioning vmkernel already exists on $esxi.ESXI_Host -ForegroundColor Cyan
     } else{
         $esxcli = Get-EsxCli -VMHost $esxi.ESXI_Host -V2
            
@@ -91,6 +91,7 @@ Foreach ($esxi in $Esxi_Hosts_prov){
         #Remove Temp Portgroup for Kernel
         $pg = Get-VirtualPortGroup -VirtualSwitch $vswitch -VMHost $esxi.ESXI_Host -Standard -Name "PROVISIONINGTEMP"
         Remove-VirtualPortGroup -VirtualPortGroup $pg -Confirm:$false | Out-Null
-        Write-Host Provisioning vmkernel created! -ForegroundColor Green
+        Write-Host Provisioning vmkernel created on $esxi.ESXI_Host -ForegroundColor Green
     }
 }
+Disconnect-VIServer -Force -Confirm:$false
