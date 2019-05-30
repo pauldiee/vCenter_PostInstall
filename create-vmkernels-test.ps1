@@ -8,7 +8,7 @@ $p = Import-PowerShellDataFile -Path ".\parameters.psd1"
 Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force | Out-Null
 
 #Create vSAN VMkernel
-$Esxi_Hosts_vsan = Import-CSV ".\vsan_vmkernels.csv"
+$Esxi_Hosts_vsan = Import-CSV ".\vsan_vmkernels-test.csv"
 Foreach ($esxi in $Esxi_Hosts_vsan){
     if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {($_.VsanTrafficEnabled -eq $true)})){
         Write-Host vSAN vmkernel already exists on $esxi.ESXI_Host -ForegroundColor Cyan
@@ -19,7 +19,7 @@ Foreach ($esxi in $Esxi_Hosts_vsan){
 }
 
 #Create vMotion VMkernel
-$Esxi_Hosts_vmotion = Import-CSV ".\vmotion_vmkernels.csv"
+$Esxi_Hosts_vmotion = Import-CSV ".\vmotion_vmkernels-test.csv"
 Foreach ($esxi in $Esxi_Hosts_vmotion){
     if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {($_.VMotionEnabled -eq $true)})){
         Write-Host vMotion vmkernel already exists on $esxi.ESXI_Host -ForegroundColor Cyan
@@ -59,7 +59,7 @@ Foreach ($esxi in $Esxi_Hosts_vmotion){
 }
 
 #Create Provisioning VMkernel
-$Esxi_Hosts_prov = Import-CSV ".\provisioning_vmkernels.csv"
+$Esxi_Hosts_prov = Import-CSV ".\provisioning_vmkernels-test.csv"
 Foreach ($esxi in $Esxi_Hosts_prov){
     if ((Get-VMHostNetworkAdapter -VMHost $esxi.ESXI_Host | Where-Object {$_.IP -eq $esxi.IP})){
         Write-Host Provisioning vmkernel already exists on $esxi.ESXI_Host -ForegroundColor Cyan

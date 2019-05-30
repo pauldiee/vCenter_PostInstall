@@ -1,3 +1,9 @@
+<#
+Script Assumes the use of 4 physical nics. The First 2 are connected to vSwitch0 and the last 2 are connected to the Distributed vSwitch.
+
+
+
+#>
 $WorkingDir = split-path -parent $PSCommandPath
 Set-Location -Path $WorkingDir
 $p = Import-PowerShellDataFile -Path ".\parameters.psd1"

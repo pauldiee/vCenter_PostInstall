@@ -280,8 +280,9 @@ foreach ($esx in $esxihosts){
 
 #Configure vSAN
 if((Get-Cluster $p.cluster | Where-Object {$_.VsanEnabled -eq $false})){
-    Set-Cluster $p.cluster -VsanEnabled $true -Confirm:$false
-    Set-VsanClusterConfiguration -Configuration (Get-VsanClusterConfiguration $p.cluster) -SpaceEfficiencyEnabled $true
+    Set-Cluster $p.cluster -VsanEnabled $true -Confirm:$false | Out-Null
+    Set-VsanClusterConfiguration -Configuration (Get-VsanClusterConfiguration $p.cluster) -SpaceEfficiencyEnabled $true | Out-Null
+    Write-Host Enabled vSAN on $p.cluster -ForegroundColor Green
 }
 
 #HARDE STOP!
