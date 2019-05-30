@@ -357,41 +357,91 @@ if ((Get-Cluster $p.cluster | Get-AdvancedSetting | Where-Object {($_.Name -eq "
 }
 
 #Configure vSphere Availability
-Set-Cluster $p.cluster -HAEnabled $true -HARestartPriority Medium -HAIsolationResponse PowerOff -HAAdmissionControlEnabled $true -Confirm:$false
-$cluster = Get-Cluster -Name $p.cluster
-$spec = New-Object VMware.Vim.ClusterConfigSpec
-$spec.DasConfig = New-Object VMware.Vim.ClusterDasConfigInfo
-$spec.DasConfig.AdmissionControlPolicy = New-Object VMware.Vim.ClusterFailoverResourcesAdmissionControlPolicy
-$spec.DasConfig.AdmissionControlPolicy.AutoComputePercentages = $false
-$spec.DasConfig.AdmissionControlPolicy.CpuFailoverResourcesPercent = 50
-$spec.DasConfig.AdmissionControlPolicy.MemoryFailoverResourcesPercent = 50
-$cluster.ExtensionData.ReconfigureCluster($spec,$true)
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
+if ((Get-Cluster $p.cluster | Where-Object {$_.HAEnabled -eq $true})){
+    Write-Host HA already enabled on $p.cluster -ForegroundColor Cyan
+} else{
+    Set-Cluster $p.cluster -HAEnabled $true -HARestartPriority Medium -HAIsolationResponse PowerOff -HAAdmissionControlEnabled $true -Confirm:$false | Out-Null
+    $cluster = Get-Cluster -Name $p.cluster
+    $spec = New-Object VMware.Vim.ClusterConfigSpec
+    $spec.DasConfig = New-Object VMware.Vim.ClusterDasConfigInfo
+    $spec.DasConfig.AdmissionControlPolicy = New-Object VMware.Vim.ClusterFailoverResourcesAdmissionControlPolicy
+    $spec.DasConfig.AdmissionControlPolicy.AutoComputePercentages = $false
+    $spec.DasConfig.AdmissionControlPolicy.CpuFailoverResourcesPercent = 50
+    $spec.DasConfig.AdmissionControlPolicy.MemoryFailoverResourcesPercent = 50
+    $cluster.ExtensionData.ReconfigureCluster($spec,$true)
+    Write-Host HA enabled on $p.cluster -ForegroundColor Green
+}
 
 #Configure EVC on Cluster
-Set-Cluster $p.cluster -EVCMode "intel-broadwell" -Confirm:$false
+if ((Get-Cluster $p.cluster | Where-Object {$_.EVCMode -eq "intel-broadwell"})){
+    Write-Host EVC already enabled on "Broadwell" -ForegroundColor Cyan
+} else{
+    Set-Cluster $p.cluster -EVCMode "intel-broadwell" -Confirm:$false
+    Write-Host EVC Enabled on $p.cluster on "Broadwell" -ForegroundColor Green
+}
 
 #Create Host DRS Groups MER-A and MER-B
-$cluster = Get-Cluster $p.cluster
-$MERAHosts = $cluster | Get-VMHost -Name dc1*
-$MERBHosts = $cluster | Get-VMHost -Name dc2*
-New-DrsClusterGroup -Name "MER-A" -Cluster $cluster -VMHost $MERAHosts
-New-DrsClusterGroup -Name "MER-B" -Cluster $cluster -VMHost $MERBHosts
+if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "MER-A"})){
+    Write-Host DRS Group MER-A already exists -ForegroundColor Cyan
+} else{
+    $cluster = Get-Cluster $p.cluster
+    $MERAHosts = $cluster | Get-VMHost -Name dc1*
+    New-DrsClusterGroup -Name "MER-A" -Cluster $cluster -VMHost $MERAHosts | Out-Null
+}
+if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "MER-B"})){
+    Write-Host DRS Group MER-B already exists -ForegroundColor Cyan
+} else{
+    $cluster = Get-Cluster $p.cluster
+    $MERBHosts = $cluster | Get-VMHost -Name dc2*
+    New-DrsClusterGroup -Name "MER-B" -Cluster $cluster -VMHost $MERBHosts | Out-Null
+}
 
-#Create VM DRS Groups Should Run MER-A and Should Run MER-B
-$cluster = Get-Cluster $p.cluster
-New-VM -Name MERA-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup
-New-VM -Name MERB-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup
-
-New-DrsClusterGroup -Name "Should Run MER-A" -VM MERA-1 -Cluster $cluster
-New-DrsClusterGroup -Name "Should Run MER-B" -VM MERB-1 -Cluster $cluster
-
-get-vm MERA-1 | Remove-VM -DeletePermanently -Confirm:$false -RunAsync
-get-vm MERB-1 | Remove-VM -DeletePermanently -Confirm:$false -RunAsync
-
-
+#Create DRS Groups Should Run MER-A and Should Run MER-B
+if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -eq "Should Run MER-A"} -and {$_.Name -eq "Should Run MER-B"}))){ #WERKT NIET
+    Write-Host VM Group Should Run MER-A and MER-B already exists -ForegroundColor Cyan
+}else{
+    #Create TEMP VM's
+    if ((Get-VM | Where-Object {$_.Name -eq "MERA-1"})){
+        Write-Host VM MERA-1 already exists -ForegroundColor Cyan
+    } else{
+        $cluster = Get-Cluster $p.cluster
+        New-VM -Name MERA-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup | Out-Null
+        Write-Host VM MERA-1 created -ForegroundColor Green
+    }
+    if ((Get-VM | Where-Object {$_.Name -eq "MERB-1"})){
+        Write-Host VM MERB-1 already exists -ForegroundColor Cyan
+    } else{
+        $cluster = Get-Cluster $p.cluster
+        New-VM -Name MERB-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup | Out-Null
+        Write-Host VM MERB-1 created -ForegroundColor Green
+    }
+    #Create Groups
+    if((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "Should Run MER-A"})){
+        Write-Host VM Group already exists -ForegroundColor Cyan
+    } else{
+        New-DrsClusterGroup -Name "Should Run MER-A" -VM MERA-1 -Cluster $cluster | Out-Null
+        Write-Host VM Group created -ForegroundColor Green
+    }
+    if((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "Should Run MER-B"})){
+        Write-Host VM Group already exists -ForegroundColor Cyan
+    } else{
+        New-DrsClusterGroup -Name "Should Run MER-B" -VM MERB-1 -Cluster $cluster | Out-Null
+        Write-Host VM Group created -ForegroundColor Green
+    }
+    #Remove TEMP VM's
+    if ((Get-VM | Where-Object {$_.Name -eq "MERA-1"})){
+        get-vm MERA-1 | Remove-VM -DeletePermanently -Confirm:$false -RunAsync | Out-Null
+        Write-Host VM MERA-1 Removed -ForegroundColor Green
+    } else {
+        Write-Host VM MERA-1 already Removed -ForegroundColor Cyan
+    }
+    if ((Get-VM | Where-Object {$_.Name -eq "MERB-1"})){
+        get-vm MERB-1 | Remove-VM -DeletePermanently -Confirm:$false -RunAsync | Out-Null
+        Write-Host VM MERB-1 Removed -ForegroundColor Green
+    } else {
+        Write-Host VM MERB-1 already Removed -ForegroundColor Cyan
+    }
+}
 #Create Affinity Rules for MER-A and MER-B
 New-DrsVMHostRule -Cluster $cluster -Name "Should run in MER-A" -VMGroup "Should Run MER-A" -VMHostGroup "MER-A" -Type ShouldRunOn -Enabled $true
 New-DrsVMHostRule -Cluster $cluster -Name "Should run in MER-B" -VMGroup "Should Run MER-B" -VMHostGroup "MER-B" -Type ShouldRunOn -Enabled $true
