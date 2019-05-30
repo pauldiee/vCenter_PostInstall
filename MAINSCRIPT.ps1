@@ -397,7 +397,7 @@ if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "MER-B"
 }
 
 #Create DRS Groups Should Run MER-A and Should Run MER-B
-if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -eq "Should Run MER-A"} -and {$_.Name -eq "Should Run MER-B"}))){ #WERKT NIET
+if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -match "Should Run MER-A|Should Run MER-B"}))){
     Write-Host VM Group Should Run MER-A and MER-B already exists -ForegroundColor Cyan
 }else{
     #Create TEMP VM's
@@ -443,22 +443,52 @@ if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -eq "Shoul
     }
 }
 #Create Affinity Rules for MER-A and MER-B
-New-DrsVMHostRule -Cluster $cluster -Name "Should run in MER-A" -VMGroup "Should Run MER-A" -VMHostGroup "MER-A" -Type ShouldRunOn -Enabled $true
-New-DrsVMHostRule -Cluster $cluster -Name "Should run in MER-B" -VMGroup "Should Run MER-B" -VMHostGroup "MER-B" -Type ShouldRunOn -Enabled $true
+if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -match "Should Run MER-A|Should Run MER-B|MER-A|MER-B"}))){
+    New-DrsVMHostRule -Cluster $cluster -Name "Should run in MER-A" -VMGroup "Should Run MER-A" -VMHostGroup "MER-A" -Type ShouldRunOn -Enabled $true | Out-Null
+    New-DrsVMHostRule -Cluster $cluster -Name "Should run in MER-B" -VMGroup "Should Run MER-B" -VMHostGroup "MER-B" -Type ShouldRunOn -Enabled $true | Out-Null
+    Write-Host Created DRS Host Rules -ForegroundColor Green
+    } else{
+    Write-Host Required DRS Groups do not exist -ForegroundColor Cyan
+    }
 
 #Supress L1TF warning
 $esxihosts = get-cluster $p.cluster |get-vmhost
 foreach ($esxi in $esxihosts){
-    Get-AdvancedSetting -Entity $esxi -Name UserVars.SuppressHyperthreadWarning | Set-AdvancedSetting -Value 1 -Confirm:$false
+    if ((Get-AdvancedSetting -Entity $esxi -Name UserVars.SuppressHyperthreadWarning | Where-Object {$_.Value -eq "1"})){
+        Write-Host HyperThreadWarning already Suppressed -ForegroundColor Cyan
+    } else{
+        Get-AdvancedSetting -Entity $esxi -Name UserVars.SuppressHyperthreadWarning | Set-AdvancedSetting -Value 1 -Confirm:$false | Out-Null
+        Write-Host HyperThreadWarning Suppressed -ForegroundColor Green
+    }
 }
 
 #Create CAMCUBE Folders
-New-Folder "Applicaties" -Location VM
-New-Folder "CAMCUBE-PRODUCTIE" -Location VM
-New-Folder "DO_NOT_BACKUP" -Location VM
+if ((Get-Folder | Where-Object {$_.Name -eq "Applicaties"})){
+    Write-Host Folder "Applicaties" already created -ForegroundColor Cyan
+} else{
+    New-Folder "Applicaties" -Location VM | Out-Null
+    Write-Host Folder "Applicaties" created -ForegroundColor Green
+}
+if ((Get-Folder | Where-Object {$_.Name -eq "CAMCUBE-PRODUCTIE"})){
+    Write-Host Folder "CAMCUBE-PRODUCTIE" already created -ForegroundColor Cyan
+} else{
+    New-Folder "CAMCUBE-PRODUCTIE" -Location VM | Out-Null
+    Write-Host Folder "CAMCUBE-PRODUCTIE" created -ForegroundColor Green
+}
+if ((Get-Folder | Where-Object {$_.Name -eq "DO_NOT_BACKUP"})){
+    Write-Host Folder "DO_NOT_BACKUP" already created -ForegroundColor Cyan
+} else{
+    New-Folder "DO_NOT_BACKUP" -Location VM | Out-Null
+    Write-Host Folder "DO_NOT_BACKUP" created -ForegroundColor Green
+}
 
 #Rename vsanDatastore
-Get-Datastore vsanDatastore | Set-Datastore -Name "Resource-vsanDatastore"
+if ((Get-Datastore | Where-Object {$_.Name -eq "Resource-vsanDatastore"})){
+    Write-Host vsanDatastore already renamed -ForegroundColor Cyan
+} else{
+    Get-Datastore vsanDatastore -ErrorAction SilentlyContinue | Set-Datastore -Name "Resource-vsanDatastore" | Out-Null
+    Write-Host vsanDatastore renamed -ForegroundColor Green
+}
 
 #Set Coredump on all hosts
 $esxihosts = get-cluster $p.cluster |get-vmhost
