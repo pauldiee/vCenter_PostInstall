@@ -283,6 +283,8 @@ if((Get-Cluster $p.cluster | Where-Object {$_.VsanEnabled -eq $false})){
     Set-Cluster $p.cluster -VsanEnabled $true -Confirm:$false | Out-Null
     Set-VsanClusterConfiguration -Configuration (Get-VsanClusterConfiguration $p.cluster) -SpaceEfficiencyEnabled $true | Out-Null
     Write-Host Enabled vSAN on $p.cluster -ForegroundColor Green
+} else{
+    Write-Host vSAN already enabled on $p.cluster -ForegroundColor Cyan
 }
 
 #HARDE STOP!
@@ -337,18 +339,22 @@ ForEach ($esxi in $esxihosts){
 
 }
 
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
-
 #Configure DRS Settings and Enable
-Set-Cluster $p.cluster -DrsEnabled $true -DrsAutomationLevel FullyAutomated -Confirm:$false
-$Cluster = Get-Cluster $p.cluster
-$Cluster | New-AdvancedSetting -Name das.isolationaddress0 -Value $p.dasisolation1 -Type ClusterDRS -Confirm:$false
-$Cluster | New-AdvancedSetting -Name das.isolationaddress1 -Value $p.dasisolation2 -Type ClusterDRS -Confirm:$false
-$Cluster | New-AdvancedSetting -Name das.usedefaultisolationaddress -Value false -Type ClusterDRS -Confirm:$false
-
-#HARDE STOP!
-[void](Read-Host 'Press Enter to continue')
+if ((Get-Cluster $p.cluster | Where-Object {$_.DrsEnabled -eq $true})){
+    Write-Host DRS already enabled on $p.cluster -ForegroundColor Cyan
+} else {
+    Set-Cluster $p.cluster -DrsEnabled $true -DrsAutomationLevel FullyAutomated -Confirm:$false | Out-Null
+    Write-Host DRS Enabled on $p.cluster -ForegroundColor Green
+}
+if ((Get-Cluster $p.cluster | Get-AdvancedSetting | Where-Object {($_.Name -eq "das.isolationaddress0")})){
+    Write-Host Das.isolationaddress0 already set -ForegroundColor Cyan
+} else {
+    $Cluster = Get-Cluster $p.cluster
+    $Cluster | New-AdvancedSetting -Name das.isolationaddress0 -Value $p.dasisolation1 -Type ClusterDRS -Confirm:$false | Out-Null
+    $Cluster | New-AdvancedSetting -Name das.isolationaddress1 -Value $p.dasisolation2 -Type ClusterDRS -Confirm:$false | Out-Null
+    $Cluster | New-AdvancedSetting -Name das.usedefaultisolationaddress -Value false -Type ClusterDRS -Confirm:$false | Out-Null
+    Write-Host Setup Das Isolation adresses -ForegroundColor Green
+}
 
 #Configure vSphere Availability
 Set-Cluster $p.cluster -HAEnabled $true -HARestartPriority Medium -HAIsolationResponse PowerOff -HAAdmissionControlEnabled $true -Confirm:$false
