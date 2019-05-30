@@ -1,5 +1,6 @@
 @{
     vcenter = "192.168.204.128" #Naam van de vCenter
+    vcenteripadress = "192.168.204.128" #Ip Adress van de vCenter
     vcenteruser = "administrator@vsphere.local"
     vcenterpass = "VMware1!" #Password voor administrator@vsphere.local
     ntpserver = "192.168.204.1" #Ip Adress van de NTP Server

@@ -494,9 +494,13 @@ if ((Get-Datastore | Where-Object {$_.Name -eq "Resource-vsanDatastore"})){
 $esxihosts = get-cluster $p.cluster |get-vmhost
 foreach ($esxi in $esxihosts){
     $esxcli = Get-EsxCli -VMHost $esxi
-    $esxcli.system.coredump.network.set($null,"vmk0",$null,$p.vcenteripadress,6500)
-    $esxcli.system.coredump.network.set($true)
-    $esxcli.system.coredump.network.get()
+    if (($esxcli.system.coredump.network.get() | Where-Object {$_.Enabled -eq $true})){
+         Write-Host Network Coredump already activated -ForegroundColor Cyan
+    } else {
+        $esxcli.system.coredump.network.set($null,"vmk0",$null,$p.vcenteripadress,6500) | Out-Null
+        $esxcli.system.coredump.network.set($true) | Out-Null
+        Write-Host Network Coredump activated -ForegroundColor Green
+    }
 }
 
 #Create ProductLocker Location on vsanDatastore (nog uitwerken)
