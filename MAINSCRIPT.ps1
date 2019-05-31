@@ -397,10 +397,9 @@ if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "MER-B"
 }
 
 #Create DRS Groups Should Run MER-A and Should Run MER-B
-if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -match "Should Run MER-A|Should Run MER-B"}))){
-    Write-Host VM Group Should Run MER-A and MER-B already exists -ForegroundColor Cyan
-}else{
-    #Create TEMP VM's
+if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("Should Run MER-A")){
+    Write-Host VM Group Should Run MER-A already exists -ForegroundColor Cyan
+} else{
     if ((Get-VM | Where-Object {$_.Name -eq "MERA-1"})){
         Write-Host VM MERA-1 already exists -ForegroundColor Cyan
     } else{
@@ -408,6 +407,19 @@ if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -match "Sh
         New-VM -Name MERA-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup | Out-Null
         Write-Host VM MERA-1 created -ForegroundColor Green
     }
+    $cluster = Get-Cluster $p.cluster
+    New-DrsClusterGroup -Name "Should Run MER-A" -VM MERA-1 -Cluster $cluster | Out-Null
+    Write-Host VM Group Should Run MER-A created -ForegroundColor Green
+    if ((Get-VM | Where-Object {$_.Name -eq "MERA-1"})){
+        get-vm MERA-1 | Remove-VM -DeletePermanently -Confirm:$false -RunAsync | Out-Null
+        Write-Host VM MERA-1 Removed -ForegroundColor Green
+    } else {
+        Write-Host VM MERA-1 already Removed -ForegroundColor Cyan
+    }
+}
+if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("Should Run MER-B")){
+    Write-Host VM Group Should Run MER-B already exists -ForegroundColor Cyan
+} else{
     if ((Get-VM | Where-Object {$_.Name -eq "MERB-1"})){
         Write-Host VM MERB-1 already exists -ForegroundColor Cyan
     } else{
@@ -415,26 +427,9 @@ if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -match "Sh
         New-VM -Name MERB-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup | Out-Null
         Write-Host VM MERB-1 created -ForegroundColor Green
     }
-    #Create Groups
-    if((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "Should Run MER-A"})){
-        Write-Host VM Group already exists -ForegroundColor Cyan
-    } else{
-        New-DrsClusterGroup -Name "Should Run MER-A" -VM MERA-1 -Cluster $cluster | Out-Null
-        Write-Host VM Group created -ForegroundColor Green
-    }
-    if((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "Should Run MER-B"})){
-        Write-Host VM Group already exists -ForegroundColor Cyan
-    } else{
-        New-DrsClusterGroup -Name "Should Run MER-B" -VM MERB-1 -Cluster $cluster | Out-Null
-        Write-Host VM Group created -ForegroundColor Green
-    }
-    #Remove TEMP VM's
-    if ((Get-VM | Where-Object {$_.Name -eq "MERA-1"})){
-        get-vm MERA-1 | Remove-VM -DeletePermanently -Confirm:$false -RunAsync | Out-Null
-        Write-Host VM MERA-1 Removed -ForegroundColor Green
-    } else {
-        Write-Host VM MERA-1 already Removed -ForegroundColor Cyan
-    }
+    $cluster = Get-Cluster $p.cluster
+    New-DrsClusterGroup -Name "Should Run MER-B" -VM MERB-1 -Cluster $cluster | Out-Null
+    Write-Host VM Group Should Run MER-B created -ForegroundColor Green
     if ((Get-VM | Where-Object {$_.Name -eq "MERB-1"})){
         get-vm MERB-1 | Remove-VM -DeletePermanently -Confirm:$false -RunAsync | Out-Null
         Write-Host VM MERB-1 Removed -ForegroundColor Green
