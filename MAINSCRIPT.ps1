@@ -381,22 +381,24 @@ if ((Get-Cluster $p.cluster | Where-Object {$_.EVCMode -eq "intel-broadwell"})){
 }
 
 #Create Host DRS Groups MER-A and MER-B
-if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "MER-A"})){
+if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("MER-A")){
     Write-Host DRS Group MER-A already exists -ForegroundColor Cyan
 } else{
     $cluster = Get-Cluster $p.cluster
     $MERAHosts = $cluster | Get-VMHost -Name dc1*
     New-DrsClusterGroup -Name "MER-A" -Cluster $cluster -VMHost $MERAHosts | Out-Null
+    Write-Host DRS Group MER-A created -ForegroundColor Green
 }
-if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -eq "MER-B"})){
+if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("MER-B")){
     Write-Host DRS Group MER-B already exists -ForegroundColor Cyan
 } else{
     $cluster = Get-Cluster $p.cluster
     $MERBHosts = $cluster | Get-VMHost -Name dc2*
     New-DrsClusterGroup -Name "MER-B" -Cluster $cluster -VMHost $MERBHosts | Out-Null
+    Write-Host DRS Group MER-B created -ForegroundColor Green
 }
 
-#Create DRS Groups Should Run MER-A and Should Run MER-B
+#Create VM DRS Groups Should Run MER-A and Should Run MER-B
 if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("Should Run MER-A")){
     Write-Host VM Group Should Run MER-A already exists -ForegroundColor Cyan
 } else{
@@ -437,14 +439,22 @@ if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("Should Run MER-B"))
         Write-Host VM MERB-1 already Removed -ForegroundColor Cyan
     }
 }
-#Create Affinity Rules for MER-A and MER-B
-if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object ({$_.Name -match "Should Run MER-A|Should Run MER-B|MER-A|MER-B"}))){
-    New-DrsVMHostRule -Cluster $cluster -Name "Should run in MER-A" -VMGroup "Should Run MER-A" -VMHostGroup "MER-A" -Type ShouldRunOn -Enabled $true | Out-Null
-    New-DrsVMHostRule -Cluster $cluster -Name "Should run in MER-B" -VMGroup "Should Run MER-B" -VMHostGroup "MER-B" -Type ShouldRunOn -Enabled $true | Out-Null
-    Write-Host Created DRS Host Rules -ForegroundColor Green
+
+#Create Affinity Rules for MER-A
+if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("Should Run MER-A")){    
+    if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("MER-A")){        
+        if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -eq "Should run in MER-A"})){
+            Write-Host DRS Affinity Rule for MER A already exists -ForegroundColor Cyan
+        } else{
+            New-DrsVMHostRule -Cluster $p.cluster -Name "Should run in MER-A" -VMGroup "Should Run MER-A" -VMHostGroup "MER-A" -Type ShouldRunOn -Enabled $true | Out-Null
+            Write-Host Created DRS Affinity Rule for MER A -ForegroundColor Green
+        }
     } else{
-    Write-Host Required DRS Groups do not exist -ForegroundColor Cyan
+        Write-Host Required DRS Host Group does not exist -ForegroundColor DarkRed
     }
+} else{    
+    Write-Host Required DRS VM Group does not exist -ForegroundColor DarkRed
+}
 
 #Supress L1TF warning
 $esxihosts = get-cluster $p.cluster |get-vmhost
