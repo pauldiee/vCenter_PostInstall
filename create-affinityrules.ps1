@@ -4,14 +4,15 @@ $p = Import-PowerShellDataFile -Path ".\parameters.psd1"
 
 #Connect to vCenter
 Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force | Out-Null
-
+$ErrorActionPreference = "SilentlyContinue"
 $checkruleexistsMERA = $false
-$checkruleexistsMERA = (Get-DrsVMHostRule -Cluster $p.cluster -ErrorAction SilentlyContinue).Name.Contains("Should run in MER-A")
+$checkruleexistsMERA = (Get-DrsVMHostRule -Cluster $p.cluster).Name.Contains("Should run in MER-A")
+$ErrorActionPreference = "Continue"
 while ($checkruleexistsMERA -eq $false){
     #Create Affinity Rules for MER-A
-    if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("Should Run MER-A")){    
-        if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("MER-A")){        
-            if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -eq "Should run in MER-A"})){
+    if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -contains "Should Run MER-A"})){    
+        if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -contains "MER-A"})){        
+            if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -contains "Should run in MER-A"})){
                 Write-Host DRS Affinity Rule for MER A already exists -ForegroundColor Cyan
             } else{
                 New-DrsVMHostRule -Cluster $p.cluster -Name "Should run in MER-A" -VMGroup "Should Run MER-A" -VMHostGroup "MER-A" -Type ShouldRunOn -Enabled $true | Out-Null
@@ -41,12 +42,17 @@ while ($checkruleexistsMERA -eq $false){
         }
     }
 }
+
+if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -contains "Should run in MER-A"})){
+    Write-Host DRS Affinity Rule for MER A already exists -ForegroundColor Cyan
+}
+
 $checkruleexistsMERB = $false
 $checkruleexistsMERB = (Get-DrsVMHostRule -Cluster $p.cluster -ErrorAction SilentlyContinue).Name.Contains("Should run in MER-B")
 while ($checkruleexistsMERB -eq $false){
     #Create Affinity Rules for MER-B
-    if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("Should Run MER-B")){    
-        if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("MER-B")){        
+    if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -contains "Should Run MER-B"})){    
+        if ((Get-DrsClusterGroup -Cluster $p.cluster | Where-Object {$_.Name -contains "MER-B"})){        
             if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -eq "Should run in MER-B"})){
                 Write-Host DRS Affinity Rule for MER B already exists -ForegroundColor Cyan
             } else{
@@ -77,4 +83,9 @@ while ($checkruleexistsMERB -eq $false){
         }
     }
 }
+
+if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -contains "Should run in MER-B"})){
+    Write-Host DRS Affinity Rule for MER B already exists -ForegroundColor Cyan
+}
+
 Disconnect-VIServer -Force -Confirm:$false | Out-Null
