@@ -42,8 +42,6 @@ while ($checkruleexistsMERA -eq $false){
         }
     }
 }
-<<<<<<< HEAD
-=======
 
 if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -contains "Should run in MER-A"})){
     Write-Host DRS Affinity Rule for MER A already exists -ForegroundColor Cyan
@@ -90,5 +88,4 @@ if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -contains "Sh
     Write-Host DRS Affinity Rule for MER B already exists -ForegroundColor Cyan
 }
 
->>>>>>> dev
 Disconnect-VIServer -Force -Confirm:$false | Out-Null
