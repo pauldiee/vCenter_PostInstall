@@ -4,19 +4,6 @@ $p = Import-PowerShellDataFile -Path ".\parameters.psd1"
 
 #Connect to vCenter
 Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force | Out-Null
-<<<<<<< HEAD
-
-$checkruleexists = (Get-DrsVMHostRule -Cluster $p.cluster).Name.Contains("Should run in MER-A")
-while ($checkruleexists -eq $false){
-    #Create Affinity Rules for MER-A
-    if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("Should Run MER-A")){    
-        if ((Get-DrsClusterGroup -Cluster $p.cluster).Name.Contains("MER-A")){        
-            if ((Get-DrsVMHostRule -Cluster $p.cluster | Where-Object {$_.Name -eq "Should run in MER-A"})){
-                Write-Host DRS Affinity Rule for MER A already exists -ForegroundColor Cyan
-            } else{
-                New-DrsVMHostRule -Cluster $p.cluster -Name "Should run in MER-A" -VMGroup "Should Run MER-A" -VMHostGroup "MER-A" -Type ShouldRunOn -Enabled $true | Out-Null
-                $checkruleexists = (Get-DrsVMHostRule -Cluster $p.cluster).Name.Contains("Should run in MER-A")
-=======
 $ErrorActionPreference = "SilentlyContinue"
 $checkruleexistsMERA = $false
 $checkruleexistsMERA = (Get-DrsVMHostRule -Cluster $p.cluster).Name.Contains("Should run in MER-A")
@@ -30,7 +17,6 @@ while ($checkruleexistsMERA -eq $false){
             } else{
                 New-DrsVMHostRule -Cluster $p.cluster -Name "Should run in MER-A" -VMGroup "Should Run MER-A" -VMHostGroup "MER-A" -Type ShouldRunOn -Enabled $true | Out-Null
                 $checkruleexistsMERA = (Get-DrsVMHostRule -Cluster $p.cluster).Name.Contains("Should run in MER-A")
->>>>>>> dev
                 Write-Host Created DRS Affinity Rule for MER A -ForegroundColor Green
             }
         } else{
