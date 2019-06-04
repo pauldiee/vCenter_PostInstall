@@ -86,9 +86,9 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
 }
 
 #Add 10 Hosts to vCenter 5 per MER (Cluster and Datacenter)
-if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
+if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){ #Cluster exists check
     1..5 | Foreach-Object { #Change Number of hosts here for MER1
-        if (($check = Get-VMHost dc1-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
+        if ((Get-VMHost dc1-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
             Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
         } else{
             Add-VMHost dc1-esxi-2-0$_.infra.local -Location  (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true | Out-Null
@@ -96,7 +96,7 @@ if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
         }
     }
     1..5 | Foreach-Object { #Change Number of hosts here for MER2
-        if (($check = Get-VMHost dc2-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
+        if ((Get-VMHost dc2-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
             Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
         } else{
             Add-VMHost dc2-esxi-2-0$_.infra.local -Location (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true | Out-Null
