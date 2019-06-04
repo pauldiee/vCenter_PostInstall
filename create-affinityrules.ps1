@@ -28,10 +28,10 @@ $p = Import-PowerShellDataFile -Path ".\parameters.psd1"
 #Connect to vCenter
 Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force | Out-Null
 
-$ErrorActionPreference = "SilentlyContinue" #solution needs work!
+$ErrorActionPreference = "SilentlyContinue" #dirty solution needs work!
 $checkruleexistsMERA = $false
 $checkruleexistsMERA = (Get-DrsVMHostRule -Cluster $p.cluster).Name.Contains("Should run in MER-A")
-$ErrorActionPreference = "Continue" #solution needs work!
+$ErrorActionPreference = "Continue" #dirty solution needs work!
 
 if ($checkruleexistsMERA -eq $true){
 	Write-Host DRS Affinity Rule for MER A already exists -ForegroundColor Cyan
@@ -60,7 +60,7 @@ while ($checkruleexistsMERA -eq $false){
         } else{
             #Create VM MERA-1
             $cluster = Get-Cluster $p.cluster
-            New-VM -Name MERA-1 -ResourcePool $cluster | Out-Null
+            New-VM -Name MERA-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup | Out-Null
             Write-Host VM MERA-1 created -ForegroundColor Green
         }
         #Create DRS VM Group Should Run MER-A
@@ -76,10 +76,10 @@ while ($checkruleexistsMERA -eq $false){
     }
 }
 
-$ErrorActionPreference = "SilentlyContinue" #solution needs work!
+$ErrorActionPreference = "SilentlyContinue" #dirty solution needs work!
 $checkruleexistsMERB = $false
 $checkruleexistsMERB = (Get-DrsVMHostRule -Cluster $p.cluster -ErrorAction SilentlyContinue).Name.Contains("Should run in MER-B")
-$ErrorActionPreference = "Continue" #solution needs work!
+$ErrorActionPreference = "Continue" #dirty solution needs work!
 
 if ($checkruleexistsMERB -eq $true){
 	Write-Host DRS Affinity Rule for MER B already exists -ForegroundColor Cyan
@@ -108,7 +108,7 @@ while ($checkruleexistsMERB -eq $false){
         } else{
             #Create VM MERB-1
             $cluster = Get-Cluster $p.cluster
-            New-VM -Name MERB-1 -ResourcePool $cluster | Out-Null
+            New-VM -Name MERB-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup | Out-Null
             Write-Host VM MERB-1 created -ForegroundColor Green
         }
         #Create DRS VM Group Should Run MER-A
