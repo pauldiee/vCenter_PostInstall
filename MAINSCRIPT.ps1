@@ -1,14 +1,17 @@
 <#
-Created by : "Paul van Dieën"
-Created on : "28-5-2019"
-Latest Change :"28-5-2019"
-
-prerequisites :
-POSH-SSH Module installed
-Powershell Framework 5.1
-PowerCLI 11.2
-
-This script Adds 5 hosts per MER for a total of 10 hosts, change the number of hosts within this script.
+=============================================================================================================
+Script:    		    MAINSCRIPT.ps1
+Date:      		    November, 2018
+Create By:          Paul van Dieën
+Last Edited by:	    Paul van Dieën
+Last Edited Date:   04-06-2019
+Requirements:		Minimum version 3.10 van RVtools
+                    POSH-SSH Module installed
+                    Powershell Framework 5.1
+                    PowerCLI 11.2
+=============================================================================================================
+.DESCRIPTION
+This script configures a newly deployed vcenter. Adds 5 hosts per MER for a total of 10 hosts, change the number of hosts within this script.
 #>
 
 $WorkingDir = split-path -parent $PSCommandPath
@@ -85,7 +88,7 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
 
 #Add 10 Hosts to vCenter 5 per MER (Cluster and Datacenter)
 if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
-    1..5 | Foreach-Object {
+    1..5 | Foreach-Object { #Change Number of hosts here for MER1
         if (($check = Get-VMHost dc1-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
             Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
         } else{
@@ -93,7 +96,7 @@ if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
             Write-Host Host dc1-esxi-2-0$_.infra.local added to $p.cluster -ForegroundColor Green
         }
     }
-    1..5 | Foreach-Object { 
+    1..5 | Foreach-Object { #Change Number of hosts here for MER2
         if (($check = Get-VMHost dc2-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
             Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
         } else{
@@ -381,10 +384,10 @@ if ((Get-Cluster $p.cluster | Where-Object {$_.EVCMode -eq "intel-broadwell"})){
 }
 
 ### Create DRS Affinity Rules with Host Groups and VM Groups ###
-$ErrorActionPreference = "SilentlyContinue" #solution needs work!
+$ErrorActionPreference = "SilentlyContinue" #dirty solution needs work!
 $checkruleexistsMERA = $false
 $checkruleexistsMERA = (Get-DrsVMHostRule -Cluster $p.cluster).Name.Contains("Should run in MER-A")
-$ErrorActionPreference = "Continue" #solution needs work!
+$ErrorActionPreference = "Continue" #dirty solution needs work!
 
 if ($checkruleexistsMERA -eq $true){
 	Write-Host DRS Affinity Rule for MER A already exists -ForegroundColor Cyan
@@ -413,7 +416,7 @@ while ($checkruleexistsMERA -eq $false){
         } else{
             #Create VM MERA-1
             $cluster = Get-Cluster $p.cluster
-            New-VM -Name MERA-1 -ResourcePool $cluster | Out-Null
+            New-VM -Name MERA-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup | Out-Null
             Write-Host VM MERA-1 created -ForegroundColor Green
         }
         #Create DRS VM Group Should Run MER-A
@@ -429,10 +432,10 @@ while ($checkruleexistsMERA -eq $false){
     }
 }
 
-$ErrorActionPreference = "SilentlyContinue" #solution needs work!
+$ErrorActionPreference = "SilentlyContinue" #dirty solution needs work!
 $checkruleexistsMERB = $false
 $checkruleexistsMERB = (Get-DrsVMHostRule -Cluster $p.cluster -ErrorAction SilentlyContinue).Name.Contains("Should run in MER-B")
-$ErrorActionPreference = "Continue" #solution needs work!
+$ErrorActionPreference = "Continue" #dirty solution needs work!
 
 if ($checkruleexistsMERB -eq $true){
 	Write-Host DRS Affinity Rule for MER B already exists -ForegroundColor Cyan
@@ -461,7 +464,7 @@ while ($checkruleexistsMERB -eq $false){
         } else{
             #Create VM MERB-1
             $cluster = Get-Cluster $p.cluster
-            New-VM -Name MERB-1 -ResourcePool $cluster | Out-Null
+            New-VM -Name MERB-1 -ResourcePool $cluster -Portgroup $p.resourcemgmtportgroup | Out-Null
             Write-Host VM MERB-1 created -ForegroundColor Green
         }
         #Create DRS VM Group Should Run MER-A
