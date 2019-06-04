@@ -1,3 +1,26 @@
+<#
+=============================================================================================================
+Script:    		    create-affinityrules.ps1
+Created Date:       November, 2018
+Created by:        	Paul van Dieën
+Last Edited by:	    Paul van Dieën
+Last Edited Date:   04-06-2019
+Requirements:		Minimaal versie 3.10 van RVtools
+                    POSH-SSH Module installed
+                    Powershell Framework 5.1
+                    PowerCLI 11.2
+                    Following scripts must be successfully run before this one:
+
+                    create-datacenter-cluster.ps1
+                    create-switch-portgroups.ps1
+                    add-hoststocluster.ps1
+                    connect-dvs-config-vswitch0.ps1
+                    create-vmkernels.ps1
+=============================================================================================================
+.DESCRIPTION
+This script configures 2 affinity rules with 2 DRS VM groups and 2 DRS Host Groups.
+Datacenter and Cluster created + dvswitch + portgroups + hosts connected.
+#>
 $WorkingDir = split-path -parent $PSCommandPath
 Set-Location -Path $WorkingDir
 $p = Import-PowerShellDataFile -Path ".\parameters.psd1"
