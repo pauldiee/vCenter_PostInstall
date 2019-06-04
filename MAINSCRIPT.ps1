@@ -533,14 +533,19 @@ foreach ($esxi in $esxihosts){
 }
 
 #Add Permission for AD group after AD Join and Adding Identity Source
-New-VIPermission -Entity (Get-Folder -NoRecursion) -Principal $p.adminadgroup -Role (Get-VIRole -Name Admin)
+if ((Get-VIPermission -Entity (Get-Folder -NoRecursion) | Where-Object {$_.Principal -contains $p.adminadgroup})){
+    Write-Host $p.adminadgroup Already added for Full Access to $p.vcenter -ForegroundColor Cyan
+} else{
+    New-VIPermission -Entity (Get-Folder -NoRecursion) -Principal $p.adminadgroup -Role (Get-VIRole -Name Admin)
+    Write-Host $p.adminadgroup Added for Full Access to $p.vcenter -ForegroundColor Green
+}
 
-#Create ProductLocker Location on vsanDatastore (nog uitwerken)
+#Create ProductLocker Location on vsanDatastore (TODO)
 #$datastore = (Get-Datastore)
 #New-PSDrive -Location $datastore -Name DS -PSProvider VimDatastore -Root "\"
 #New-Item -Path DS: -ItemType Directory -Name SharedProductLocker
 #New-Item -ItemType Directory -Name vmtools -Path \SharedProductLocker\
 #New-Item -ItemType Directory -Name floppies -Path \SharedProductLocker\
 
-#Create vSAN Storage Policies (nog uitwerken)
+#Create vSAN Storage Policies (TODO)
 #Get-SpbmStoragePolicy
