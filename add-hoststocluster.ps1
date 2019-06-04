@@ -19,7 +19,7 @@ Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force
 
 #Add 10 Hosts to vCenter 5 per MER (Cluster and Datacenter)
 if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
-    1..10 | Foreach-Object { #Change Number of hosts here for MER1
+    1..5 | Foreach-Object { #Change Number of hosts here for MER1 (does not work from 10 up needs work)
         if ((Get-VMHost dc1-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
             Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
         } else{
@@ -31,7 +31,7 @@ if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
             }
         }
     }
-    1..5 | Foreach-Object { #Change Number of hosts here for MER2
+    1..5 | Foreach-Object { #Change Number of hosts here for MER2 (does not work from 10 up needs work)
         if ((Get-VMHost dc2-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
             Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
         } else{
