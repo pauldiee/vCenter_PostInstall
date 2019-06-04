@@ -86,9 +86,9 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
 }
 
 #Add 10 Hosts to vCenter 5 per MER (Cluster and Datacenter)
-if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
+if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){ #Cluster exists check
     1..5 | Foreach-Object { #Change Number of hosts here for MER1
-        if (($check = Get-VMHost dc1-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
+        if ((Get-VMHost dc1-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
             Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
         } else{
             Add-VMHost dc1-esxi-2-0$_.infra.local -Location  (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true | Out-Null
@@ -96,7 +96,7 @@ if ((Get-Cluster |Where-Object {$_.Name -eq $p.cluster})){
         }
     }
     1..5 | Foreach-Object { #Change Number of hosts here for MER2
-        if (($check = Get-VMHost dc2-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
+        if ((Get-VMHost dc2-esxi-2-0$_.infra.local -ErrorAction SilentlyContinue)){            
             Write-Host Host dc1-esxi-2-0$_.infra.local already exists. -ForegroundColor Cyan
         } else{
             Add-VMHost dc2-esxi-2-0$_.infra.local -Location (Get-Cluster $p.cluster) -User $p.esxiuser -Password $p.esxipass -force:$true | Out-Null
@@ -533,14 +533,19 @@ foreach ($esxi in $esxihosts){
 }
 
 #Add Permission for AD group after AD Join and Adding Identity Source
-New-VIPermission -Entity (Get-Folder -NoRecursion) -Principal $p.adminadgroup -Role (Get-VIRole -Name Admin)
+if ((Get-VIPermission -Entity (Get-Folder -NoRecursion) | Where-Object {$_.Principal -contains $p.adminadgroup})){
+    Write-Host $p.adminadgroup Already added for Full Access to $p.vcenter -ForegroundColor Cyan
+} else{
+    New-VIPermission -Entity (Get-Folder -NoRecursion) -Principal $p.adminadgroup -Role (Get-VIRole -Name Admin)
+    Write-Host $p.adminadgroup Added for Full Access to $p.vcenter -ForegroundColor Green
+}
 
-#Create ProductLocker Location on vsanDatastore (nog uitwerken)
+#Create ProductLocker Location on vsanDatastore (TODO)
 #$datastore = (Get-Datastore)
 #New-PSDrive -Location $datastore -Name DS -PSProvider VimDatastore -Root "\"
 #New-Item -Path DS: -ItemType Directory -Name SharedProductLocker
 #New-Item -ItemType Directory -Name vmtools -Path \SharedProductLocker\
 #New-Item -ItemType Directory -Name floppies -Path \SharedProductLocker\
 
-#Create vSAN Storage Policies (nog uitwerken)
+#Create vSAN Storage Policies (TODO)
 #Get-SpbmStoragePolicy
