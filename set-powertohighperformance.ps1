@@ -1,3 +1,16 @@
+<#
+=============================================================================================================
+Script:    		    set-powertohighperformance.ps1
+Date:      		    June, 2019
+Create By:          Paul van Dieën
+Last Edited by:	    Paul van Dieën
+Last Edited Date:   04-06-2019
+Requirements:		Powershell Framework 5.1
+                    PowerCLI 11.2
+=============================================================================================================
+.DESCRIPTION
+This script will set PowerPolicy to High Performance on all Hosts in the Cluster.
+#>
 $WorkingDir = split-path -parent $PSCommandPath
 Set-Location -Path $WorkingDir
 $p = Import-PowerShellDataFile -Path ".\parameters.psd1"

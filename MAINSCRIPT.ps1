@@ -1,12 +1,11 @@
 <#
 =============================================================================================================
 Script:    		    MAINSCRIPT.ps1
-Date:      		    November, 2018
+Date:      		    June, 2019
 Create By:          Paul van Dieën
 Last Edited by:	    Paul van Dieën
 Last Edited Date:   04-06-2019
-Requirements:		Minimum version 3.10 van RVtools
-                    POSH-SSH Module installed
+Requirements:		POSH-SSH Module installed
                     Powershell Framework 5.1
                     PowerCLI 11.2
 =============================================================================================================

@@ -1,3 +1,16 @@
+<#
+=============================================================================================================
+Script:    		    create-switch-portgroups.ps1
+Date:      		    June, 2019
+Create By:          Paul van Dieën
+Last Edited by:	    Paul van Dieën
+Last Edited Date:   04-06-2019
+Requirements:		Powershell Framework 5.1
+                    PowerCLI 11.2
+=============================================================================================================
+.DESCRIPTION
+This script will create a DVS and 3 portgroups needed for vmkernel creation script create-vmkernels.ps1.
+#>
 $WorkingDir = Split-Path -Parent $PSCommandPath
 Set-Location -Path $WorkingDir
 $p = Import-PowerShellDataFile -Path ".\parameters.psd1"

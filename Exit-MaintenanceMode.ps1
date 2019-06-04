@@ -1,3 +1,16 @@
+<#
+=============================================================================================================
+Script:    		    Exit-MaintenanceMode.ps1
+Date:      		    June, 2019
+Create By:          Paul van Dieën
+Last Edited by:	    Paul van Dieën
+Last Edited Date:   04-06-2019
+Requirements:		Powershell Framework 5.1
+                    PowerCLI 11.2
+=============================================================================================================
+.DESCRIPTION
+This script will exit all Hosts from maintenance mode currently in maintenance mode.
+#>
 $WorkingDir = split-path -parent $PSCommandPath
 Set-Location -Path $WorkingDir
 $p = Import-PowerShellDataFile -Path ".\parameters.psd1"

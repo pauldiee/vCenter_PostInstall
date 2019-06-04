@@ -1,8 +1,16 @@
 <#
-Script Assumes the use of 4 physical nics. The First 2 are connected to vSwitch0 and the last 2 are connected to the Distributed vSwitch.
-
-
-
+=============================================================================================================
+Script:    		    connect-dvs-config-vswitch0.ps1
+Date:      		    June, 2019
+Create By:          Paul van Dieën
+Last Edited by:	    Paul van Dieën
+Last Edited Date:   04-06-2019
+Requirements:		Powershell Framework 5.1
+                    PowerCLI 11.2
+=============================================================================================================
+.DESCRIPTION
+This script will connect DVS created by create-switch-portgroups.ps1 to all hosts in the cluster. Script Assumes the use of 4 physical nics. 
+The First 2 are connected to vSwitch0 and the last 2 are connected to the Distributed vSwitch.
 #>
 $WorkingDir = split-path -parent $PSCommandPath
 Set-Location -Path $WorkingDir

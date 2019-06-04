@@ -1,7 +1,7 @@
 <#
 =============================================================================================================
 Script:    		    create-affinityrules.ps1
-Created Date:       November, 2018
+Created Date:       June, 2019
 Created by:        	Paul van Dieën
 Last Edited by:	    Paul van Dieën
 Last Edited Date:   04-06-2019
