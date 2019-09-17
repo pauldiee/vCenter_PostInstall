@@ -25,6 +25,7 @@ if ((Get-Datacenter |Where-Object {$_.Name -eq $p.datacenter})){
     } else {
         New-VDSwitch -Location $p.datacenter -Name $p.dvs -NumUplinkPorts 2 -Mtu 9000 | Out-Null
         Write-Host Distributed Switch $p.dvs Created! -ForegroundColor Green
+        (get-vdswitch $p.dvs | get-view).EnableNetworkResourceManagement($true)
     }
 
     #Create $p.resourcemgmtportgroup Portgroup
