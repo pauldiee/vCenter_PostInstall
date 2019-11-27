@@ -15,7 +15,8 @@ $WorkingDir = split-path -parent $PSCommandPath
 Set-Location -Path $WorkingDir
 $p = Import-PowerShellDataFile -Path ".\parameters.psd1"
 
-Connect-VIServer $p.vcenter -User $p.vcenteruser -Password $p.vcenterpass -Force | Out-Null
+$vcenter = "" #enter vcenter name
+Connect-VIServer -Force
 
 #Configure NTP server
 $esxihosts = get-cluster $p.cluster |get-vmhost
